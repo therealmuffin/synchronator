@@ -1,0 +1,222 @@
+#!/bin/bash
+
+rm -f config.mk config.h
+
+[ -z "${CC}" ] && CC=gcc
+
+LDFLAGS="${LDFLAGS} -lpthread -lm"
+output_devices=1
+
+displayhelp()
+{
+    echo "'configure' configures synchronator its installation options."
+    echo ""
+    echo "Usage: ./configure [VAR=VALUE]..."
+    echo ""
+    echo "Defaults for the options are specified in brackets."
+    echo ""
+    echo "Installation directory:"
+    echo "    --prefix=PREFIX       install architecture-independent files in PREFIX"
+    echo "                          [/usr/local]"
+    echo ""
+    echo "Output devices(*):"
+    echo "    --disable-serial      Disables serial support"
+    echo "    --enable-i2c          Enables I2C support (beta)"
+    echo "    --enable-tcp          Enables TCP support (beta)"
+    echo "*) if no output device is set configure will fail"
+    echo ""
+    echo "Misc options:"
+    echo "    --disable-msq         Disables the message queue for http support"
+    echo "    --debug         		Allows debugging with gdb"
+    echo ""
+    echo "By default, 'make install' will install all the files in '/usr/local/bin'."
+    echo "You can specify an installation prefix other than '/usr/local' using"
+    echo "'--prefix', for instance '--prefix=$HOME'."
+    echo ""
+    echo "Program names:"
+    echo "    --program-prefix=PREFIX   prepend PREFIX to installed program names"
+    echo "    --program-suffix=SUFFIX   append SUFFIX to installed program names"
+    echo ""
+    echo "Process variables:"
+    echo "    --process-timeout-rx=INT  Sets number of incoming commands to forego after"
+    echo "                              each outgoing command to prevent a loop [4]."
+    echo "    --process-timeout-tx=INT  Sets number of outgoing commands to forego after"
+    echo "                              each incoming command to prevent a loop [2]."
+}
+
+export_config()
+{
+    echo "#define $1" >> config.h
+    echo "$1=yes" >> config.mk
+    eval "$1=yes"
+}
+
+# check for and use pkg-config package $2 with CONFIG_ var $3
+do_pkg_config()
+{
+    if pkg-config $2 2>/dev/null; then
+        CFLAGS="${CFLAGS} `pkg-config --cflags $2`"
+        LDFLAGS="${LDFLAGS} `pkg-config --libs $2`"
+        if [ "$3" ]; then
+            export_config $3
+        fi
+        echo "$1 found"
+    else
+        echo "$1 or its dev package not found"
+        if [ ! "$3" ]; then
+            echo "Required package not found, cannot continue"
+            rm -f config.mk config.h
+            exit 1
+        fi
+fi
+}
+
+# check for header $1 with CONFIG_ var $2
+check_header()
+{
+    echo "#include<$1>" > .header_test.c
+    if gcc -c .header_test.c > /dev/null 2>&1 /dev/null;  then
+        echo "$1 found"
+        if [ "$2" ]; then
+            export_config $2
+        fi
+    else
+        echo "$1 not found"
+        if [ ! "$2" ]; then
+            echo "Required header not found, cannot continue"
+            rm .header_test.c
+            rm -f config.mk config.h
+            exit 1
+        fi
+    fi
+
+    rm -f .header_test.c .header_test.o
+}
+
+process_arguments()
+{
+    while :
+    do
+        case "$1" in
+            -h | --help )
+                displayhelp
+                exit 0
+            ;;
+            --prefix=* )
+                if [ -d ${1#*=} ]; then
+                    echo "PREFIX=${1#*=}" >> config.mk
+                else
+                    printf >&2 'FATAL: location is not valid: %s\n' "${1#*=}"
+                    exit
+                fi
+                shift
+            ;;
+            --disable-serial )
+                    echo "#define DISABLE_SERIAL" >> config.h
+                    echo "DISABLE_SERIAL=yes" >> config.mk
+                    output_devices=$((output_devices-1))
+                shift
+            ;;
+            --enable-i2c )
+                    check_header linux/i2c-dev.h
+                    echo "#define ENABLE_I2C" >> config.h
+                    echo "ENABLE_I2C=yes" >> config.mk
+                    output_devices=$((output_devices+1))
+                shift
+            ;;
+            --enable-tcp )
+                    echo "#define ENABLE_TCP" >> config.h
+                    echo "ENABLE_TCP=yes" >> config.mk
+                    output_devices=$((output_devices+1))
+                shift
+            ;;
+            --disable-msq  )
+                    echo "#define DISABLE_MSQ" >> config.h
+                    echo "DISABLE_MSQ=yes" >> config.mk
+                shift
+            ;;
+            --debug  )
+                    CFLAGS="${CFLAGS} -g"
+                shift
+            ;;
+            --program-prefix=* )
+                if ! [[ ${1#*=} =~ [^a-zA-Z0-9] ]]; then
+                    echo "#define PROGRAM_PREFIX \"${1#*=}\"" >> config.h
+                    echo "PROGRAM-PREFIX=${1#*=}" >> config.mk
+                else
+                    printf >&2 'FATAL: --program-prefix must alphanumeric: %s\n' "${1#*=}"
+                    exit
+                fi
+                shift
+            ;;
+            --program-suffix=* )
+                if ! [[ ${1#*=} =~ [^a-zA-Z0-9] ]]; then
+                    echo "#define PROGRAM_SUFFIX \"${1#*=}\"" >> config.h
+                    echo "PROGRAM-SUFFIX=${1#*=}" >> config.mk
+                else
+                    printf >&2 'FATAL: --program-suffix must alphanumeric: %s\n' "${1#*=}"
+                    exit
+                fi
+                shift
+            ;;
+            --process-timeout-rx=* )
+                if ! [[ ${1#*=} =~ [^0-9] ]]; then
+                    echo "#define CUSTOM_PROCESS_TIMEOUT_RX ${1#*=}" >> config.h
+                    if [[ ${1#*=} -lt 4 ]]; then
+                        printf >&2 'WARN: setting --process-timeout-rx too low may cause a loop, see manual: %s\n' "${1#*=}"
+                    fi
+                else
+                    printf >&2 'FATAL: --process-timeout-rx requires a valid integer: %s\n' "${1#*=}"
+                    exit
+                fi
+                shift
+            ;;
+            --process-timeout-tx=* )
+                if ! [[ ${1#*=} =~ [^0-9] ]]; then
+                    echo "#define CUSTOM_PROCESS_TIMEOUT_TX ${1#*=}" >> config.h
+                    if [[ ${1#*=} -lt 2 ]]; then
+                        printf >&2 'WARN: setting --process-timeout-tx too low may cause a loop, see manual: %s\n' "${1#*=}"
+                    fi
+                else
+                    printf >&2 'FATAL: --process-timeout-tx requires a valid integer: %s\n' "${1#*=}"
+                    exit
+                fi
+                shift
+            ;;
+            --) # End of all options
+                shift
+                break
+            ;;
+            -*)
+                printf >&2 'WARN: Unknown option (ignored): %s\n' "$1"
+                shift
+            ;;
+            *)  # no more options. Stop while loop
+                break
+            ;;
+        esac
+    done
+}
+
+echo Configuring Synchronator
+
+echo "// automatically generated file" > config.h
+
+process_arguments $@
+
+if [ "$output_devices" -lt 1 ]; then
+	printf >&2 'FATAL: at least one output device must be set\n'
+	rm -f config.mk config.h
+	exit 1
+fi
+
+do_pkg_config ALSA alsa
+do_pkg_config LIBCONFIG libconfig
+
+echo "CFLAGS+=${CFLAGS}" >> config.mk
+echo "LDFLAGS+=${LDFLAGS}" >> config.mk
+
+echo CFLAGS: ${CFLAGS}
+echo LDFLAGS: ${LDFLAGS}
+
+echo "Configure successful. You may now build with 'make'"

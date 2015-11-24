@@ -1,0 +1,31 @@
+V0.4.0 beta2 2015-
+    - Added back requirement for tail in ascii.
+    - fixed the thread blocking issue during cancellation.
+    - Added TCP support
+
+V0.4.0 beta1 2015-08-30
+    - Major restructure: organised code in separate files which makes it easier to
+      add different interfaces than e.g. serial/rs232 and different processing methods,
+      rather than the current ascii and numeric data. Also allows for easier reading,
+      debugging, etc.
+    - Added an i2c interface
+    - Dropped the requirement for headers and tails in both ascii and numeric processing
+      methods. This allows for volume only devices (i2c in particular).
+    - Adding configuration options to exclude the message queue and serial interface
+    - Some experimenting with coding styles.
+    TODO
+    - Testing, updating manuals, adding TCP support and systemd script
+    - Threads may block trying to acquire a lock when a lock owning thread is canceled.
+    sol? http://pubs.opengroup.org/onlinepubs/9699919799/functions/pthread_mutexattr_setrobust.html
+    sol2? https://www.sourceware.org/pthreads-win32/manual/pthread_cleanup_push.html
+
+V0.3.2 2014-08-05
+	- Minor fix for Cambridge Audio 851D. Volume [min > max] is now allowed
+	- bash/sh mixup in config file.
+
+v0.3.1 2014-05-30
+	- Minor cleanup and renaming files.
+	- Created configuration file and added a number of options.
+
+v0.3.0 2013-08-18
+	-Public beta release. Implemented features should work without issues.
