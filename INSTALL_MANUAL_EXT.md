@@ -12,6 +12,7 @@ run 'apt-get update'
 <pre>
 apt-get install libasound2-dev
 apt-get install pkg-config
+apt-get install git
 </pre>
 
 #####Install I2C development package (if required)
@@ -43,8 +44,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
 #####Install synchronator:
 <pre>
-wget ftp://muffins.diskstation.me/synchronator-0.3.1.tar.gz
-tar -zxf synchronator-0.3.1.tar.gz
+git clone https://github.com/therealmuffin/synchronator.git
 cd synchronator
 ./configure
 make

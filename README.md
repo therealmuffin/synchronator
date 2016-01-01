@@ -30,7 +30,7 @@ Currently only the serial interface is fully supported (thus RS232, TTL, etc). S
 ### Supported amplifiers/brands
 - Cambridge Audio
 - Carry Audio Design
-- Classe
+- Classé
 - Leema Acoustics
 - Lyngdorf
 - NAD

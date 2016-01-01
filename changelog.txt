@@ -1,7 +1,9 @@
-V0.4.0 beta2 2015-
-    - Added back requirement for tail in ascii.
+V0.4.0 beta2 2016-01-01
+    - added back requirement for tail in ascii.
     - fixed the thread blocking issue during cancellation.
-    - Added TCP support
+    - added TCP support (including Heos support)
+    - updated documentation
+    - minor fixes
 
 V0.4.0 beta1 2015-08-30
     - Major restructure: organised code in separate files which makes it easier to
@@ -28,4 +30,4 @@ v0.3.1 2014-05-30
 	- Created configuration file and added a number of options.
 
 v0.3.0 2013-08-18
-	-Public beta release. Implemented features should work without issues.
+	- Public beta release. Implemented features should work without issues.

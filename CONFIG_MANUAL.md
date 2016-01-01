@@ -11,7 +11,7 @@ http://www.hyperrealm.com/libconfig/libconfig_manual.html
 
 ## Interface configuration
 
-interface - set the interface for communication with amplifier [serial`*`|i2c]
+interface - set the interface for communication with amplifier [serial`*`|i2c|tcp]
 
 
 ### Serial specific options
@@ -34,6 +34,21 @@ serial_2stop - 2 stop bits [TRUE|FALSE`*`]
 i2c_device - location of serial device
 
 i2c_address - i2c address
+
+
+### TCP specific options
+
+tcp_address - ip address of amplifier
+
+tcp_port - tcp port of amplifier [1-99999]
+
+tcp_slave - don't connect to amplifier [TRUE|FALSE`*`]
+
+tcp_listen - allow incoming connections [TRUE|FALSE`*`]
+
+tcp_max - maximum of incoming connections [1-100|10`*`]
+
+tcp_echo - return an echo of incoming data [TRUE|FALSE`*`]
 
 
 ## Data processing configuration
@@ -63,7 +78,7 @@ Some amplifiers do not give automatic status updates. By setting a trigger and a
 
 Sections other than those discussed above can have any random name. However, it is recommended to use section name as used in the sample configurations, namely input and power, if appropriate.
 
-- register - if set to TRUE it will be searched for matching incoming commands [TRUE|FALSE*]
+- register - if set to TRUE it will be searched when matching incoming commands [TRUE|FALSE*]
 
 
 ### ASCII specific options
