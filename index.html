@@ -51,7 +51,7 @@
 
 <p>Obviously, for a computer to control an amplifier that amplifier needs to be controllable. Many amplifiers are controllable via a serial connection (e.g. RS232, TTL, etc). </p>
 
-<p>Currently only the serial interface is fully supported (thus RS232, TTL, etc). Support for I2C is under development and currently being tested. Support for TCP/IP support is planned in the near future.</p>
+<p>Currently only the serial interface is fully supported (thus RS232, TTL, etc). Support for I2C and TCP is under development and currently being tested.</p>
 
 <h3>
 <a id="supported-amplifiersbrands" class="anchor" href="#supported-amplifiersbrands" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supported amplifiers/brands</h3>
@@ -59,22 +59,19 @@
 <ul>
 <li>Cambridge Audio</li>
 <li>Carry Audio Design</li>
-<li>Classe<sup>*</sup>
-</li>
+<li>Classe</li>
 <li>Leema Acoustics</li>
 <li>Lyngdorf</li>
 <li>NAD</li>
 <li>Parasound</li>
 </ul>
 
-<p>*) volume changes at the amplifier side are not synced back for this amplifier at this moment</p>
-
 <h2>
 <a id="features-summary" class="anchor" href="#features-summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features summary</h2>
 
 <ul>
 <li>Synchronisation of volume level changes between Linux and Hi-Fi amplifier</li>
-<li>Http/PHP interface for controlling miscellaneous amplifier options (power, input, etc)</li>
+<li>HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)</li>
 </ul>
 
 <h2>
@@ -84,7 +81,7 @@
 
 <ul>
 <li><p>With the NAD M50 Bluesound player one can control the volume level of other NAD equipment (Dac or amplifier). While this is nice if you have that NAD equipment, it is less useful if you have an amplifier of another brand. Synchonator can translate commands between these two incompatible devices.</p></li>
-<li><p>Once the TCP/IP interface is ready, it should be possible to control your amplifier from within Denon Heos and by extension Spotify Connect. With Denon Heos it is possible to control Denon and Marantz amplifiers via TCP/IP. Since Synchronator will be able to translate these commands, Synchronator can enable this functionality for other brands as well.</p></li>
+<li><p>It is possible to control your amplifier volume level from within Denon Heos and by extension Spotify Connect. The Denon Heos Link and Drive can control Denon and Marantz amplifiers via TCP/IP. Synchronator can translate these commands and enable this functionality for other brands as well.</p></li>
 </ul>
 
 <h2>
