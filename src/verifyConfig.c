@@ -105,10 +105,15 @@ int position, int valueMin, int valueMax, double valueDefault) {
 
 int validateConfigBool(config_t *config, char *configSettingSource, int *configSettingDestination, 
 int valueDefault) {
+	const char* boolNaming[2];
+	boolNaming[0] = "FALSE";
+	boolNaming[1] = "TRUE";
+	
     if(!config_lookup_bool(config, configSettingSource, configSettingDestination))
         *configSettingDestination = valueDefault;
     else {
-        syslog(LOG_INFO, "[OK] %s: %i", configSettingSource, *configSettingDestination);
+        syslog(LOG_INFO, "[OK] %s: %s", configSettingSource, boolNaming[*configSettingDestination]);
         return EXIT_SUCCESS;
-    }
+    }    
+	return EXIT_SUCCESS;
 }

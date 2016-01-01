@@ -22,7 +22,8 @@
 		double multiplierExtToMixer;
 		float multiplierIntToDevice;
 	
-		/* Status variable, external volume volume level if discrete, if relative internal volume level */
+		/* Status variable, external volume volume level if discrete, if relative internal 
+		    volume level */
 		double volume_level_status;
 	
 		/* Multiplies non-discrete volume commands (not/partially implemented) */

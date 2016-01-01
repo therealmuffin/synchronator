@@ -359,7 +359,7 @@ int init(config_t *config) {
     	validateConfigInt(config, "volume.response.pre_offset", &common_data.responsePreOffset, -1, 0, 0, 0);
     	validateConfigInt(config, "volume.response.post_offset", &common_data.responsePostOffset, -1, 0, 0, 0);
     	validateConfigDouble(config, "volume.response.multiplier", &common_data.responseMultiplier, -1, 0, 0, 1);
-    	validateConfigInt(config, "volume.response.invert_multiplier", &int_setting, -1, 0, 0, 0);
+    	validateConfigBool(config, "volume.response.invert_multiplier", &int_setting, 0);
     	if(int_setting)
     		common_data.responseMultiplier = 1/common_data.responseMultiplier;
     	if(common_data.responsePreOffset || common_data.responsePostOffset || common_data.responseMultiplier != 1)

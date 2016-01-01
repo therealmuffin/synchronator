@@ -40,7 +40,7 @@ static int send(const void *buf, size_t count);
 static void *listen(void *arg);
 
 interface_t interface_i2c = {
-    .name = "i2c (beta)",
+    .name = "i2c",
     .help = &help,
     .init = &init,
     .deinit = &deinit,

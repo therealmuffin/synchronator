@@ -8,9 +8,10 @@ This file provides a more detailed description of the Synchronator installation 
 
 run 'apt-get update'
 
-#####Install libasound (the libraries for accessing alsa):
+#####Install required packages
 <pre>
 apt-get install libasound2-dev
+apt-get install pkg-config
 </pre>
 
 #####Install I2C development package (if required)
@@ -112,6 +113,7 @@ becomes:
 Now if you change the volume in MPD you should be able to see the change
 going to the dummy soundcard in alsa, run
 <pre>
+apt-get install alsa-utils
 alsamixer
 </pre>
 type F6 and select Dummy.

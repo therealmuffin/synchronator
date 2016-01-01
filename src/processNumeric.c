@@ -111,14 +111,17 @@ static int init(void) {
 		dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+3;
 		
 		for(count = 0; count < dechex_data.header_length[main_count]; count++) {
-			if(validateConfigInt(&config, config_query, (int *)&dechex_data.serial_command[main_count][count], count, 0, 255, -1) == EXIT_FAILURE)
+			if(validateConfigInt(&config, config_query, (int *)&dechex_data.serial_command[main_count][count], 
+			count, 0, 255, -1) == EXIT_FAILURE)
 				return EXIT_FAILURE;
 		}
-		if(validateConfigInt(&config, "tail", (int *)dechex_data.command_tail[main_count], main_count, 0, 255, -2) == EXIT_FAILURE) {
+		if(validateConfigInt(&config, "tail", (int *)dechex_data.command_tail[main_count], 
+		main_count, 0, 255, -2) == EXIT_FAILURE) {
 			dechex_data.serial_command_length[main_count]--;
 			dechex_data.command_tail[main_count] = NULL;
 		}
-		if(validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], main_count, 0, 255, -2) == EXIT_FAILURE) {
+		if(validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], 
+		main_count, 0, 255, -2) == EXIT_FAILURE) {
 			dechex_data.serial_command_length[main_count]--;
 			dechex_data.event[main_count] = dechex_data.event_header[main_count];
 			if(dechex_data.command_tail[main_count] != NULL)
@@ -128,14 +131,17 @@ static int init(void) {
 	if(common_data.send_query) {
 		dechex_data.statusQuery = calloc(common_data.statusQueryLength, sizeof(uint8_t*));
 		for(count = 0; count < common_data.statusQueryLength; count++) {
-			if(validateConfigInt(&config, "query.trigger", (int *)&dechex_data.statusQuery[count], count, 0, 255, -1) == EXIT_FAILURE)
+			if(validateConfigInt(&config, "query.trigger", (int *)&dechex_data.statusQuery[count], 
+			count, 0, 255, -1) == EXIT_FAILURE)
 				return EXIT_FAILURE;
 		}
 		common_data.statusQuery = (const char *)dechex_data.statusQuery;
 	}
-	if(!common_data.discrete_volume && validateConfigInt(&config, "volume.min", &dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
+	if(!common_data.discrete_volume && validateConfigInt(&config, "volume.min", 
+	&dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
 		return EXIT_FAILURE;
-	if(!common_data.discrete_volume && validateConfigInt(&config, "volume.plus", &dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
+	if(!common_data.discrete_volume && validateConfigInt(&config, "volume.plus", 
+	&dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
 		return EXIT_FAILURE;
  	
  	common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
@@ -207,7 +213,8 @@ static int compileCommand(char *category, void *action) {
         
         common_data.volume_level_status = *volume_level;
         common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
-		syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", common_data.volume_level_status);
+		syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
+			common_data.volume_level_status);
         
         pthread_mutex_unlock(&lockProcess);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);

@@ -200,6 +200,8 @@ process_arguments()
 
 echo Configuring Synchronator
 
+type "pkg-config" >/dev/null 2>&1 || { echo >&2 "Can not find pkg-config. Aborting."; exit 1; }
+
 echo "// automatically generated file" > config.h
 
 process_arguments $@
