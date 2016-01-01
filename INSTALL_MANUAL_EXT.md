@@ -45,7 +45,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 #####Install synchronator:
 <pre>
 git clone https://github.com/therealmuffin/synchronator.git
-cd synchronator
+cd synchronator/src
 ./configure
 make
 make install
