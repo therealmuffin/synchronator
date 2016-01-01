@@ -25,24 +25,22 @@ The only requirement for audio applications is that a different device can be se
 
 Obviously, for a computer to control an amplifier that amplifier needs to be controllable. Many amplifiers are controllable via a serial connection (e.g. RS232, TTL, etc). 
 
-Currently only the serial interface is fully supported (thus RS232, TTL, etc). Support for I2C is under development and currently being tested. Support for TCP/IP support is planned in the near future.
+Currently only the serial interface is fully supported (thus RS232, TTL, etc). Support for I2C and TCP is under development and currently being tested.
 
 ### Supported amplifiers/brands
 - Cambridge Audio
 - Carry Audio Design
-- Classe<sup>*</sup>
+- Classe
 - Leema Acoustics
 - Lyngdorf
 - NAD
 - Parasound
 
-*) volume changes at the amplifier side are not synced back for this amplifier at this moment
-
 
 ## Features summary
 
 - Synchronisation of volume level changes between Linux and Hi-Fi amplifier
-- Http/PHP interface for controlling miscellaneous amplifier options (power, input, etc)
+- HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)
 
 ## Untested alternative uses
 
@@ -50,7 +48,7 @@ Synchronator is designed to synchronise the volume level between Linux and Hi-Fi
 
 - With the NAD M50 Bluesound player one can control the volume level of other NAD equipment (Dac or amplifier). While this is nice if you have that NAD equipment, it is less useful if you have an amplifier of another brand. Synchonator can translate commands between these two incompatible devices.
 
-- Once the TCP/IP interface is ready, it should be possible to control your amplifier from within Denon Heos and by extension Spotify Connect. With Denon Heos it is possible to control Denon and Marantz amplifiers via TCP/IP. Since Synchronator will be able to translate these commands, Synchronator can enable this functionality for other brands as well.
+- It is possible to control your amplifier volume level from within Denon Heos and by extension Spotify Connect. The Denon Heos Link and Drive can control Denon and Marantz amplifiers via TCP/IP. Synchronator can translate these commands and enable this functionality for other brands as well.
 
 ## Installation and configuration
 
@@ -59,12 +57,6 @@ For installation check the installation manual or the extended installation manu
 For setting the appropriate configuration settings check the configuration manual
 
 ## Downloads
-
-Download the latest version from here:
-http://muffins.diskstation.me/synchronator-latest.tar.gz
-
-Download the current beta version from here:
-http://muffins.diskstation.me/synchronator-beta.tar.gz
 
 Download the configuration library from here:
 http://www.hyperrealm.com/libconfig/
