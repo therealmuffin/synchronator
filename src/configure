@@ -19,15 +19,17 @@ displayhelp()
     echo "    --prefix=PREFIX       install architecture-independent files in PREFIX"
     echo "                          [/usr/local]"
     echo ""
-    echo "Output devices(*):"
+    echo "Interfaces(*):"
     echo "    --disable-serial      Disables serial support"
     echo "    --enable-i2c          Enables I2C support (beta)"
     echo "    --enable-tcp          Enables TCP support (beta)"
     echo "*) if no output device is set configure will fail"
     echo ""
     echo "Misc options:"
-    echo "    --disable-msq         Disables the message queue for http support"
-    echo "    --debug         		Allows debugging with gdb"
+    echo "    --disable-msq                 Disables the message queue for http support"
+    echo "    --debug                       Allows debugging with gdb"
+    echo "    --enable-interface-recovery   Attempts to reopen interface device on write"
+    echo "                                  errors (i2c only)"
     echo ""
     echo "By default, 'make install' will install all the files in '/usr/local/bin'."
     echo "You can specify an installation prefix other than '/usr/local' using"
@@ -130,6 +132,11 @@ process_arguments()
                     output_devices=$((output_devices+1))
                 shift
             ;;
+            --enable-interface-recovery )
+                    echo "#define ENABLE_INTERFACE_RECOVERY" >> config.h
+                    echo "ENABLE_INTERFACE_RECOVERY=yes" >> config.mk
+                shift
+            ;;
             --disable-msq  )
                     echo "#define DISABLE_MSQ" >> config.h
                     echo "DISABLE_MSQ=yes" >> config.mk
@@ -207,9 +214,9 @@ echo "// automatically generated file" > config.h
 process_arguments $@
 
 if [ "$output_devices" -lt 1 ]; then
-	printf >&2 'FATAL: at least one output device must be set\n'
-	rm -f config.mk config.h
-	exit 1
+    printf >&2 'FATAL: at least one output device must be set\n'
+    rm -f config.mk config.h
+    exit 1
 fi
 
 do_pkg_config ALSA alsa
