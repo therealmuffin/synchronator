@@ -33,10 +33,17 @@ int initMixer(void) {
     snd_mixer_selem_id_t* snd_sid;
     snd_mixer_selem_id_alloca(&snd_sid);
 
-    static const char* card = "hw:Dummy";
-    static const char* mix_name = "Master";
-    static int mix_index = 0;
+    const char* card = "hw:Dummy";
+    const char* mix_name = "Master";
+    int mix_index = 0;
     int status = -2;
+    
+    if(config_lookup_string(&config, "mixer_name", &mix_name) == CONFIG_TRUE) {
+        syslog(LOG_INFO, "[OK] mixer_name: %s", mix_name);
+    }
+    if(config_lookup_int(&config, "mixer_index", &mix_index) == CONFIG_TRUE) {
+        syslog(LOG_INFO, "[OK] mixer_index: %i", mix_index);
+    }
 
     /* sets simple-mixer index and name */
     snd_mixer_selem_id_set_index(snd_sid, mix_index);
@@ -67,7 +74,6 @@ int initMixer(void) {
         return EXIT_FAILURE;
         pause();
     }
-
     snd_mixer_selem_get_playback_volume_range(snd_elem, &common_data.alsa_volume_min, &common_data.alsa_volume_max);
     common_data.alsa_volume_range = common_data.alsa_volume_max - common_data.alsa_volume_min;
     syslog(LOG_DEBUG, "Alsa volume range, min, max: %i, %i, %i", common_data.alsa_volume_range, common_data.alsa_volume_min, common_data.alsa_volume_max);
@@ -95,7 +101,23 @@ void *watchMixer(void *arg) {
     long volume_old = -1;
     int status = -2;
     int events = -1;
-
+    
+    // initialize volume at amp end under conditions
+    if(!common_data.sync_2way && common_data.discrete_volume) {
+        if((snd_mixer_selem_get_playback_volume(snd_elem, 0, &volume)) < 0) {
+                syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", snd_strerror(status), status);
+                pthread_kill(mainThread, SIGTERM);
+                pause();
+            }
+        // make the value bound to 100  // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
+        volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
+    
+        if(common_data.process->compileCommand("volume", &volume) == EXIT_FAILURE) {
+            pthread_kill(mainThread, SIGTERM);
+            pause();
+        }
+    }
+    
     while(1) {
         /* !!!! uses poll(), see definition at line 639 of mixer.c. 
          * -> cancellation point !!!! */
