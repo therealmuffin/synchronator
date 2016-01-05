@@ -50,6 +50,8 @@ interface_t interface_i2c = {
 
 static pthread_mutex_t interfaceLock;
 static int interfaceFD = -1;
+static const char *i2cDevice;
+static int i2cAddress;
 
 static void help(void) {
     printf("I2C\n"
@@ -58,8 +60,6 @@ static void help(void) {
 
 static int init(void) {
 
-    const char *i2cDevice;
-    int i2cAddress;
     int status;
 
 	if(common_data.sync_2way) {
@@ -69,7 +69,7 @@ static int init(void) {
 
     if(validateConfigString(&config, "i2c_device", &i2cDevice, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
-        
+    
 	interfaceFD = open(i2cDevice, O_RDWR);
 	if (interfaceFD < 0) {
 		syslog(LOG_ERR, "Error opening device %s: %s (%i)\n", i2cDevice, strerror(errno), errno);
@@ -92,6 +92,38 @@ static int init(void) {
     return EXIT_SUCCESS;
 } /* end init */
 
+#ifdef ENABLE_INTERFACE_RECOVERY
+    static int reconnectInterface(void) {
+        unsigned int waitPeriod[3] = {5,5,5}; // seconds
+        int count;
+    
+        close(interfaceFD);
+        interfaceFD = -1;
+    
+        for(count = 0; count < 3; count += 1) {
+            interfaceFD = open(i2cDevice, O_RDWR);
+            if (interfaceFD < 0) {
+                syslog(LOG_WARNING, "Failed to reopen device, initiating sleep [%i]: %s (%i)\n", 
+                    waitPeriod[count], strerror(errno), errno);
+                sleep(waitPeriod[count]);
+                continue;
+            }
+            if (ioctl(interfaceFD, I2C_SLAVE, i2cAddress) == -1) {
+                syslog(LOG_WARNING, "input/output error, initiating sleep [%i]: %s (%i)\n", 
+                    waitPeriod[count], strerror(errno), errno);
+                close(interfaceFD);
+                interfaceFD = -1;
+                sleep(waitPeriod[count]);
+                continue;
+            }
+        
+            return EXIT_SUCCESS;
+        }
+    
+        return EXIT_FAILURE;
+    }
+#endif // #ifdef ENABLE_INTERFACE_RECOVERY
+
 static int send(const void *message, size_t messageLength) {
 
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -99,11 +131,24 @@ static int send(const void *message, size_t messageLength) {
     
     if(write(interfaceFD, message, messageLength) == -1) {
     
+#ifndef ENABLE_INTERFACE_RECOVERY
         pthread_mutex_unlock(&interfaceLock);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
-        syslog(LOG_ERR, "Failed to write to i2c port: %s (%i)", strerror(errno), errno);
+        syslog(LOG_ERR, "Failed to write to i2c device: %s (%i)", strerror(errno), errno);
         return EXIT_FAILURE;
+#else
+        syslog(LOG_WARNING, "Failed to write to i2c device, reopen attempted: %s (%i)", 
+            strerror(errno), errno);
+        if(reconnectInterface() == EXIT_FAILURE) {            
+            pthread_mutex_unlock(&interfaceLock);
+            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+            syslog(LOG_WARNING, "Reopen failed");
+            return EXIT_FAILURE;
+        }
+#endif // #ifdef ENABLE_INTERFACE_RECOVERY
+	
     }
     
     pthread_mutex_unlock(&interfaceLock);
