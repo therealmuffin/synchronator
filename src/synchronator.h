@@ -88,8 +88,8 @@
 	#define MAX_PATH_LENGTH 50
 
 	/* Ignore X incoming commands after outgoing command and vice versa to prevent a loop */
-	#define DEFAULT_PROCESS_TIMEOUT_IN 4
-	#define DEFAULT_PROCESS_TIMEOUT_OUT 2
+	#define DEFAULT_PROCESS_TIMEOUT_IN 20
+	#define DEFAULT_PROCESS_TIMEOUT_OUT 20
 
 	#ifdef CUSTOM_PROCESS_TIMEOUT_RX
 		#undef DEFAULT_PROCESS_TIMEOUT_IN
