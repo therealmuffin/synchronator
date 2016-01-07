@@ -1,12 +1,12 @@
 #ifndef COMMON_H
 	#define COMMON_H
 
+    #include <pthread.h>
 	#include <libconfig.h>
 	#include "interfaces.h"
 	#include "processData.h"
 	#include "mixer.h"
-
-	int processVolume(double *action_lookup);
+    #include "volume.h"
 
 	/* Variables are set while validating/processing config, some are useful shortcuts */
 	typedef struct {
@@ -42,6 +42,7 @@
 	
 		process_method_t *process;
 		interface_t *interface;
+		volumeCurve_t *volumeCurve;
 	} common_data_t;
 
 	extern common_data_t common_data;

@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include <libconfig.h>
 #include "synchronator.h"
 #include "verifyConfig.h"
 

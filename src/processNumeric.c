@@ -144,7 +144,6 @@ static int init(void) {
 	&dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
 		return EXIT_FAILURE;
  	
- 	common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
 
 	return EXIT_SUCCESS;
 } /* end init() */

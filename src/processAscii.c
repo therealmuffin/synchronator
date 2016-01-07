@@ -103,7 +103,6 @@ static int init(void) {
 		return EXIT_FAILURE;
         if(common_data.send_query) common_data.statusQueryLength = strlen(common_data.statusQuery);
         
-	common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
 	
     return EXIT_SUCCESS;
 } /* end init() */

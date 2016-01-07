@@ -111,6 +111,8 @@ void *watchMixer(void *arg) {
             }
         // make the value bound to 100  // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
         volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
+        
+        common_data.volumeCurve->convertMixer2Internal(&volume);
     
         if(common_data.process->compileCommand("volume", &volume) == EXIT_FAILURE) {
             pthread_kill(mainThread, SIGTERM);
@@ -142,6 +144,8 @@ void *watchMixer(void *arg) {
         volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
         if(volume == volume_old)
             continue;
+        
+        common_data.volumeCurve->convertMixer2Internal(&volume);
         
         if(common_data.process->compileCommand("volume", &volume) == EXIT_FAILURE) {
             pthread_kill(mainThread, SIGTERM);

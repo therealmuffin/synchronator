@@ -169,7 +169,7 @@ process_arguments()
             --process-timeout-rx=* )
                 if ! [[ ${1#*=} =~ [^0-9] ]]; then
                     echo "#define CUSTOM_PROCESS_TIMEOUT_RX ${1#*=}" >> config.h
-                    if [[ ${1#*=} -lt 4 ]]; then
+                    if [[ ${1#*=} -lt 5 ]]; then
                         printf >&2 'WARN: setting --process-timeout-rx too low may cause a loop, see manual: %s\n' "${1#*=}"
                     fi
                 else
@@ -181,7 +181,7 @@ process_arguments()
             --process-timeout-tx=* )
                 if ! [[ ${1#*=} =~ [^0-9] ]]; then
                     echo "#define CUSTOM_PROCESS_TIMEOUT_TX ${1#*=}" >> config.h
-                    if [[ ${1#*=} -lt 2 ]]; then
+                    if [[ ${1#*=} -lt 5 ]]; then
                         printf >&2 'WARN: setting --process-timeout-tx too low may cause a loop, see manual: %s\n' "${1#*=}"
                     fi
                 else

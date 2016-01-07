@@ -90,6 +90,8 @@ discrete - specifies whether to use absolute (TRUE) or relative (FALSE) volume l
 
 header - prefix added to every volume command code (thus post the header defined in the main section)
 
+curve - Volume curve can be linear or logarithmic [linear`*`|log]
+
 ###### [response volume sub-section]
 
 The following settings allow translation of the incoming volume range to the outgoing volume range (if different).
