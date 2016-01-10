@@ -33,6 +33,7 @@ volumeCurve_t volumeCurveLinear = {
     
 };
 
+static double multiplierExtToMixer;
 
 static void help(void) {
     printf("Linear\n"
@@ -41,12 +42,12 @@ static void help(void) {
 
 static void regenerateMultipliers(void) {
     common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
-    common_data.multiplierExtToMixer = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
+    multiplierExtToMixer = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
 }
 
 static void convertExternal2Mixer(double *volume) {
 //    double volume_multiplier = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
-    *volume = ((*volume - (double)common_data.volume_min) / common_data.multiplierExtToMixer) + (double)common_data.alsa_volume_min;
+    *volume = ((*volume - (double)common_data.volume_min) / multiplierExtToMixer) + (double)common_data.alsa_volume_min;
 }
 
 static void convertMixer2Internal(long *volume) {

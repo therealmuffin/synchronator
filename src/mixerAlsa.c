@@ -55,17 +55,20 @@ int initMixer(void) {
         pause();
     }
     if((status = snd_mixer_attach(snd_handle, card)) < 0) {
-        syslog(LOG_ERR, "Failed to attach device to mixer: %s (%i)", snd_strerror(status), status);
+        syslog(LOG_ERR, "Failed to attach device to mixer: %s (%i)", 
+            snd_strerror(status), status);
         return EXIT_FAILURE;
         pause();
     }
     if((status = snd_mixer_selem_register(snd_handle, NULL, NULL)) < 0) {
-        syslog(LOG_ERR, "Failed to register mixer element class: %s (%i)", snd_strerror(status), status);
+        syslog(LOG_ERR, "Failed to register mixer element class: %s (%i)", 
+            snd_strerror(status), status);
         return EXIT_FAILURE;
         pause();
     }
     if((status = snd_mixer_load(snd_handle)) < 0) {
-        syslog(LOG_ERR, "Failed to load mixer elements: %s (%i)", snd_strerror(status), status);
+        syslog(LOG_ERR, "Failed to load mixer elements: %s (%i)", 
+            snd_strerror(status), status);
         return EXIT_FAILURE;
         pause();
     }
@@ -74,12 +77,13 @@ int initMixer(void) {
         return EXIT_FAILURE;
         pause();
     }
-    snd_mixer_selem_get_playback_volume_range(snd_elem, &common_data.alsa_volume_min, &common_data.alsa_volume_max);
+    snd_mixer_selem_get_playback_volume_range(snd_elem, &common_data.alsa_volume_min, 
+        &common_data.alsa_volume_max);
     common_data.alsa_volume_range = common_data.alsa_volume_max - common_data.alsa_volume_min;
-    syslog(LOG_DEBUG, "Alsa volume range, min, max: %i, %i, %i", common_data.alsa_volume_range, common_data.alsa_volume_min, common_data.alsa_volume_max);
+    syslog(LOG_DEBUG, "Alsa volume range, min, max: %i, %i, %i", common_data.alsa_volume_range, 
+        common_data.alsa_volume_min, common_data.alsa_volume_max);
     
 	return EXIT_SUCCESS;
-
 }
 
 int setMixer(int volume) {
@@ -105,11 +109,13 @@ void *watchMixer(void *arg) {
     // initialize volume at amp end under conditions
     if(!common_data.sync_2way && common_data.discrete_volume) {
         if((snd_mixer_selem_get_playback_volume(snd_elem, 0, &volume)) < 0) {
-                syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", snd_strerror(status), status);
+                syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", 
+                    snd_strerror(status), status);
                 pthread_kill(mainThread, SIGTERM);
                 pause();
             }
-        // make the value bound to 100  // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
+        
+        // make the value bound to 100
         volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
         
         common_data.volumeCurve->convertMixer2Internal(&volume);
@@ -124,7 +130,8 @@ void *watchMixer(void *arg) {
         /* !!!! uses poll(), see definition at line 639 of mixer.c. 
          * -> cancellation point !!!! */
         if((status = snd_mixer_wait(snd_handle, -1)) < 0) {
-            syslog(LOG_ERR, "Failed waiting for mixer event: %s (%i)", snd_strerror(status), status);
+            syslog(LOG_ERR, "Failed waiting for mixer event: %s (%i)", 
+                snd_strerror(status), status);
             pthread_kill(mainThread, SIGTERM);
             pause();
         }
@@ -136,11 +143,13 @@ void *watchMixer(void *arg) {
          * level has changed and if not continue. */
         volume_old = volume;
         if((snd_mixer_selem_get_playback_volume(snd_elem, 0, &volume)) < 0) {
-            syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", snd_strerror(status), status);
+            syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", 
+                snd_strerror(status), status);
             pthread_kill(mainThread, SIGTERM);
             pause();
         }
-        /* make the value bound to 100 */ // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
+        /* make the value bound to 100 */  
+        // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
         volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
         if(volume == volume_old)
             continue;

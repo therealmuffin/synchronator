@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include <math.h> // used for ceilf()
+#include <math.h>
 
 /* External libraries  */
 #include <libconfig.h>
@@ -180,7 +180,6 @@ int processVolume(double *action_lookup) {
         syslog(LOG_WARNING, "Setting mixer failed");
     common_data.volume_out_timeout = DEFAULT_PROCESS_TIMEOUT_OUT;
     
-    syslog(LOG_DEBUG, "Volume multiplier, max and min: %.4f, %ld, and %ld", common_data.multiplierExtToMixer, common_data.volume_max, common_data.volume_min);
     syslog(LOG_DEBUG, "Volume level mutation (ext. initiated): ext. (int.): %.2f (%.2f)", common_data.volume_level_status, volume_level);
     
     pthread_mutex_unlock(&lockProcess);

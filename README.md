@@ -42,7 +42,7 @@ Currently only the serial interface is fully supported (thus RS232, TTL, etc). S
 - Synchronisation of volume level changes between Linux and Hi-Fi amplifier
 - HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)
 
-## Untested alternative uses
+## Alternative uses
 
 Synchronator is designed to synchronise the volume level between Linux and Hi-Fi. However, other applications can be thought of also. By running multiple instances of Synchronator, commands between incompatible devices can be translated. A few examples follow:
 

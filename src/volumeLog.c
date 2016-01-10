@@ -52,6 +52,7 @@ volumeCurve_t volumeCurveLog = {
 };
 
 static double multiplierNormalize;
+static double multiplierExtToMixer;
 
 static void help(void) {
     printf("Log\n"
@@ -61,22 +62,22 @@ static void help(void) {
 
 // perhaps long int and increase range to 100000 to allow for 
 static void regenerateMultipliers(void) {
-    common_data.multiplierExtToMixer = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
     common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
+    multiplierExtToMixer = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
     multiplierNormalize = ((double)common_data.volume_max - (double)common_data.volume_min) / (100-0);
 }
 
-void convertExternal2Mixer(double *volume) {
+static void convertExternal2Mixer(double *volume) {
     *volume = ((*volume - (double)common_data.volume_min) / multiplierNormalize);
     *volume = pow(10,*volume/50); // 50 vs 84,9485
     
     if(*volume<0)
         *volume = 0;
 
-    *volume = (*volume / common_data.multiplierExtToMixer) + (double)common_data.alsa_volume_min;
+    *volume = (*volume / multiplierExtToMixer) + (double)common_data.alsa_volume_min;
 }
 
-void convertMixer2Internal(long *volume) {
+static void convertMixer2Internal(long *volume) {
     if(*volume <= 1) {
         *volume = 0;
         return;

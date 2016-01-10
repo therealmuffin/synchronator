@@ -315,7 +315,9 @@ int init(void) {
     syslog(LOG_INFO, "Checking presence and validity of required variables:");
     
     validateConfigBool(&config, "sync_2way", &common_data.sync_2way, 0);
+    
     validateConfigBool(&config, "diff_commands", &common_data.diff_commands, 0);
+    
     common_data.send_query = config_lookup(&config, "query") ? 1:0;
     if(common_data.send_query && ((conf_setting = config_lookup(&config, "query.trigger")) == NULL || 
     config_setting_is_array(conf_setting) == CONFIG_FALSE ||  (common_data.statusQueryLength = 
@@ -355,6 +357,7 @@ int init(void) {
     if(initMixer() == EXIT_FAILURE)
     	return EXIT_FAILURE;
 
+	/* init multipliers */
 	common_data.volumeCurve->regenerateMultipliers();
 
 #ifndef DISABLE_MSQ

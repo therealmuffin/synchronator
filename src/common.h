@@ -19,7 +19,6 @@
 		/* Alsa mixer variables */
 		long alsa_volume_min, alsa_volume_max, alsa_volume_range;
 		
-		double multiplierExtToMixer;
 		float multiplierIntToDevice;
 	
 		/* Status variable, external volume volume level if discrete, if relative internal 
