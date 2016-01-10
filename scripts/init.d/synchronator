@@ -18,17 +18,23 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 NAME=synchronator
-DAEMON="/usr/local/bin/synchronator"
-PIDFILE=/var/run/$NAME.pid
-DAEMON_ARGS="-i /usr/local/etc/synchronator.conf"
+DAEMON=/usr/local/bin/$NAME
+PIDLOCATION=/var/run/$NAME
+PIDFILE=$PIDLOCATION/$NAME.pid
+DAEMON_ARGS="-i /usr/local/etc/"$NAME".conf"
+USER=root
 
 [ -x $binary ] || exit 0
+
+[ -d $PIDLOCATION ] || mkdir $PIDLOCATION
+
+chown $USER:$USER $PIDLOCATION
 
 RETVAL=0
 
 start() {
     echo -n "Starting synchronator: "
-    start-stop-daemon --start --quiet --pidfile "$PIDFILE" \
+    start-stop-daemon --start --chuid $USER --quiet --pidfile "$PIDFILE" \
                       --exec "$DAEMON" -b --oknodo -- $DAEMON_ARGS
     log_end_msg $?
 }

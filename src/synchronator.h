@@ -50,7 +50,7 @@
 		#define PROGRAM_VERSION "UNKOWN VERSION"
 	#endif // #ifndef PROGRAM_VERSION
 	#define PROGRAM_LEGAL \
-	"Copyright (C) 2015 Muffinman\n" \
+	"Copyright (C) 2013-2016 Muffinman\n" \
 	"This is free software; see the source for copying conditions. There is NO\n" \
 	"warranty; not even MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 
@@ -80,7 +80,7 @@
 	#define FTOK_ID 'B'
 	#define MSQ_SIZE CONFIG_QUERY_SIZE/2
 
-	#define LOCKFILE "/var/run/"PROGRAM_NAME".pid"
+	#define LOCKFILE "/var/run/synchronator/"PROGRAM_NAME".pid"
 	#define LOCKMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 
 	/* Location for setting status files */

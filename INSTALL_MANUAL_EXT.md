@@ -134,12 +134,14 @@ synchronator.conf:
 /usr/local/etc/synchronator.conf
 </pre>
 
+##### Testing the setup
+
 It's time to test the setup. Run the following:
 <pre>
 synchronator -v2
 </pre>
 
-Now it runs in verbose mode and should give so you can see exactly what it's
+Now it runs in verbose mode so you can see exactly what it's
 doing.
 
 If you don't see any extra output open a new ssh screen and type:
@@ -147,7 +149,11 @@ If you don't see any extra output open a new ssh screen and type:
 tail -f /var/log/syslog | grep synchronator
 </pre>
 
-Test your setup (without source or speakers connected). If it runs without issues make it
+Test your setup (without source or speakers connected). 
+
+##### Making Synchronator boot at start-up
+
+If it runs without issues make it
 start at boot, for Debian/Ubuntu/Voyage/etc systems:
 <pre>
 cp the synchronator script in the scripts/init.d directory to /etc/init.d
@@ -157,6 +163,24 @@ Then run:
 <pre>
 sudo chmod 755 /etc/init.d/synchronator
 sudo update-rc.d synchronator defaults 
+</pre>
+
+To make Synchronator run as a different user, create a user. Do note that for Synchronator to listen to privileged ports (below 1024), e.g. Heos, it needs to run with root rights.
+<pre>
+adduser --no-create-home synchronator
+</pre>
+
+... and add it to the appropriate groups to allow access and control over Alsa and the interface (e.g. serial port or i2c).
+
+<pre>
+usermod -a -G audio synchronator
+usermod -a -G dialout synchronator
+</pre>
+
+Set the directory /tmp to permissions 1777
+
+<pre>
+chmod 1777 /tmp
 </pre>
 
 ####KNOWN ISSUES:
