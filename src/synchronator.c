@@ -110,9 +110,10 @@ int main(int argc, char *argv[]) {
     /* All files created without revoked permissions (thus result: 0666) */
     umask(0);
     
-    if(daemon)
+    if(daemon) {
         if((status = daemonize()) == EXIT_FAILURE)
             exit(EXIT_FAILURE);
+    }
     else {
         /* Setup syslog, print also to stderr, and give notice of execution */
         openlog(PROGRAM_NAME, LOG_NDELAY | LOG_PID | LOG_PERROR, LOG_DAEMON);
