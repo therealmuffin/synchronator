@@ -23,17 +23,20 @@ static void help(void);
 static void regenerateMultipliers(void);
 static void convertExternal2Mixer(double *volume);
 static void convertMixer2Internal(long *volume);
+static void convertInternal2External(long *volumeInternal, double *volumeExternal);
 
 volumeCurve_t volumeCurveLinear = {
     .name = "linear",
     .help = &help,
     .regenerateMultipliers = &regenerateMultipliers,
     .convertExternal2Mixer = &convertExternal2Mixer,
-    .convertMixer2Internal = &convertMixer2Internal
+    .convertMixer2Internal = &convertMixer2Internal,
+    .convertInternal2External = &convertInternal2External
     
 };
 
 static double multiplierExtToMixer;
+static double multiplierIntToExt;
 
 static void help(void) {
     printf("Linear\n"
@@ -41,7 +44,7 @@ static void help(void) {
 }
 
 static void regenerateMultipliers(void) {
-    common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
+    multiplierIntToExt = ((double)common_data.volume_max - (double)common_data.volume_min) / 100.0f;
     multiplierExtToMixer = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
 }
 
@@ -51,5 +54,9 @@ static void convertExternal2Mixer(double *volume) {
 }
 
 static void convertMixer2Internal(long *volume) {
+ // mixer == internal
+}
 
+static void convertInternal2External(long *volumeInternal, double *volumeExternal) {
+    *volumeExternal = (*volumeInternal * multiplierIntToExt) + common_data.volume_min;
 }

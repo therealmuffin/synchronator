@@ -23,20 +23,20 @@
 #include <errno.h>
 #include <syslog.h>
 #include <libconfig.h>
+/* I2C interface */
+#include <fcntl.h>
+#include <linux/i2c-dev.h>
+
 #include "verifyConfig.h"
 #include "synchronator.h"
 #include "common.h"
 #include "interfaces.h"
 
-/* I2C interface */
-#include <fcntl.h>
-#include <linux/i2c-dev.h>
-
 
 static void help(void);
 static int init(void);
 static int deinit(void);
-static int send(const void *buf, size_t count);
+static int send(const void *message, size_t messageLength);
 static void *listen(void *arg);
 
 interface_t interface_i2c = {
@@ -44,6 +44,7 @@ interface_t interface_i2c = {
     .help = &help,
     .init = &init,
     .deinit = &deinit,
+    .reply = &send,
     .send = &send,
     .listen = &listen
 };

@@ -10,7 +10,8 @@
 		// deinitialises interfaces
 		int (*deinit)(void);
 
-		int (*send)(const void *buf, size_t count);
+		int (*reply)(const void *message, size_t messageLength);
+		int (*send)(const void *message, size_t messageLength);
 		void *(*listen)(void *arg);
 	
 	} interface_t;

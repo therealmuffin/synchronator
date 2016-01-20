@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <alsa/asoundlib.h>
+
 #include "common.h"
 #include "mixer.h"
 
@@ -86,9 +87,28 @@ int initMixer(void) {
 	return EXIT_SUCCESS;
 }
 
+int getMixer(long *volume) {
+    int status = -2;
+
+    if((snd_mixer_selem_get_playback_volume(snd_elem, 0, volume)) < 0) {
+            syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", 
+                snd_strerror(status), status);
+            return EXIT_FAILURE;
+        }
+    /* make the value bound to 100 */  
+    // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
+    *volume = 100 * (*volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
+
+    common_data.volume->convertMixer2Internal(volume);
+    
+	return EXIT_SUCCESS;
+}
+
 int setMixer(int volume) {
-	if((snd_mixer_selem_set_playback_volume_all(snd_elem, volume)) != 0)
+	if((snd_mixer_selem_set_playback_volume_all(snd_elem, volume)) != 0) {
+        syslog(LOG_WARNING, "Setting mixer failed");
 		return EXIT_FAILURE;
+	}
 
 	return EXIT_SUCCESS;
 }
@@ -108,19 +128,13 @@ void *watchMixer(void *arg) {
     
     // initialize volume at amp end under conditions
     if(!common_data.sync_2way && common_data.discrete_volume) {
-        if((snd_mixer_selem_get_playback_volume(snd_elem, 0, &volume)) < 0) {
-                syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", 
-                    snd_strerror(status), status);
-                pthread_kill(mainThread, SIGTERM);
-                pause();
-            }
-        
-        // make the value bound to 100
-        volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
-        
-        common_data.volumeCurve->convertMixer2Internal(&volume);
     
-        if(common_data.process->compileCommand("volume", &volume) == EXIT_FAILURE) {
+        if(getMixer(&volume) == EXIT_FAILURE) {
+            pthread_kill(mainThread, SIGTERM);
+            pause();
+        }
+    
+        if(common_data.process->compileVolumeCommand(&volume) == EXIT_FAILURE) {
             pthread_kill(mainThread, SIGTERM);
             pause();
         }
@@ -142,25 +156,20 @@ void *watchMixer(void *arg) {
          * mixer events to be doubled. Therefore check if the sound
          * level has changed and if not continue. */
         volume_old = volume;
-        if((snd_mixer_selem_get_playback_volume(snd_elem, 0, &volume)) < 0) {
-            syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", 
-                snd_strerror(status), status);
+        
+        if(getMixer(&volume) == EXIT_FAILURE) {
             pthread_kill(mainThread, SIGTERM);
             pause();
         }
-        /* make the value bound to 100 */  
-        // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
-        volume = 100 * (volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
         if(volume == volume_old)
             continue;
         
-        common_data.volumeCurve->convertMixer2Internal(&volume);
-        
-        if(common_data.process->compileCommand("volume", &volume) == EXIT_FAILURE) {
+        if(common_data.process->compileVolumeCommand(&volume) == EXIT_FAILURE) {
             pthread_kill(mainThread, SIGTERM);
             pause();
         }
-    } /*  End infinite while loop */
+        
+        } /*  End infinite while loop */
 
     /* Shouldn't have gotten here */
     pthread_kill(mainThread, SIGTERM);

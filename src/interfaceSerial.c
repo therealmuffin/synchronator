@@ -22,25 +22,23 @@
 #include <signal.h>
 #include <errno.h>
 #include <syslog.h>
+#include <pthread.h>
 #include <libconfig.h>
-#include "verifyConfig.h"
-#include "synchronator.h"
-#include "common.h"
-#include "interfaces.h"
-
 /* Serial interface */
 #include <termios.h>
 #include <fcntl.h>
 #include <sys/poll.h>
 #include <unistd.h>
 
-/* External libraries  */
-#include <pthread.h>
+#include "verifyConfig.h"
+#include "synchronator.h"
+#include "common.h"
+#include "interfaces.h"
 
 static void help(void);
 static int init(void);
 static int deinit(void);
-static int send(const void *buf, size_t count);
+static int send(const void *message, size_t messageLength);
 static void *listen(void *arg);
 
 interface_t interface_serial = {
@@ -48,6 +46,7 @@ interface_t interface_serial = {
     .help = &help,
     .init = &init,
     .deinit = &deinit,
+    .reply = &send,
     .send = &send,
     .listen = &listen
 };
@@ -206,7 +205,7 @@ static int init(void) {
     return EXIT_SUCCESS;
 } /* end init */
 
-static int send(const void *message, size_t messageLength) {        
+static int send(const void *message, size_t messageLength) {
     
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_mutex_lock(&interfaceLock);

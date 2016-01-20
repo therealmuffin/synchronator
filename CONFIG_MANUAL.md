@@ -130,10 +130,21 @@ All ASCII variables (header, tail, delimiter, etc) are mandatory. If they're not
 
 #####[volume section]
 
+tail - suffix added to every volume command code (thus pre the tail defined in the main section)
+
 length - does the amplifier expect '02' set to 2, if '002' set to 3, '2' set to 1 (default).
 
 precision - how many numbers behind the dot.
 
+#####[response section]
+
+register - needs to be FALSE to prevent Synchronator from searching it to match incoming command.
+
+indicator - commands stripped from their header and tail, without even_delimiter present as set in the configuration, if this character is matched, it will be processed as an incoming command.
+
+To match incoming requests, requests and their reply's need to be defined. The name of the request needs to match either 'volume' or a name of any of the 'other sections' defined in the configuration file. Each name defines an array. The first value defines whether to reply a default reply (defined by the 3rd value in the array) or the actual value. In the latter it will try to see if it has an answer (what's the current input or is the device powered on or off?). If it can't find the answer, it will revert to the default value set in the 3rd value of the array. In this instance, the 3rd value needs to match any of the commands as defined in the specific section of which this array lends its name. Check the NAD-M51.conf for an example.
+
+input=(FALSE, "command code + parameter", "usb");
 
 ### Numeric specific options
 
@@ -141,7 +152,7 @@ Numerical values must be within 0-255 bounds (unsigned 8 bit values).
 
 The header in the main section is formatted as an array delimited by square brackets
 
-None of the numeric data variables are mandatory except for volume. If no other variables are defined (header, tail, etc), all incoming byte is assumed to be volume data. Every outgoing byte represents volume data
+None of the numeric data variables are mandatory except for volume. If no other variables are defined (header, tail, etc), every incoming byte is assumed to be volume data. Every outgoing byte represents volume data
 
 ### Glossary
 

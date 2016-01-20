@@ -19,21 +19,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <math.h>
-
-/* External libraries  */
-#include <libconfig.h>
 #include <pthread.h>
+#include <syslog.h>
+#include <libconfig.h>
 
-/* Local headers*/
 #include "synchronator.h"
 #include "common.h"
 #include "verifyConfig.h"
 #include "volume.h"
 
+
 extern volumeCurve_t volumeCurveLinear;
 extern volumeCurve_t volumeCurveLog;
+
+static int initVolume(void);
+static int processVolume(double *volumeExternal);
+static void deinitVolume(void);
+	
+static volume_functions_t volume;
 
 static volumeCurve_t *listVolumeCurves[] = {
 	&volumeCurveLinear,
@@ -41,22 +45,31 @@ static volumeCurve_t *listVolumeCurves[] = {
     NULL
 };
 
-
-static volumeCurve_t *getVolumeCurve(const char *name) {
+volume_functions_t *getVolume(const char **name) {
     volumeCurve_t **curve;
+    
+    volume.init = &initVolume;
+    volume.process = &processVolume;
+    volume.deinit = &deinitVolume;
 
     // default to first interface
-    if (!name)
-        return listVolumeCurves[0];
+    if (!*name)
+        *name = listVolumeCurves[0]->name;
 
     for (curve=listVolumeCurves; *curve; curve++)
-        if (!strcasecmp(name, (*curve)->name))
-            return *curve;
+        if (!strcasecmp(*name, (*curve)->name)) {
+            volume.curve = (*curve)->name;
+            volume.regenerateMultipliers = (*curve)->regenerateMultipliers;
+            volume.convertExternal2Mixer = (*curve)->convertExternal2Mixer;
+            volume.convertMixer2Internal = (*curve)->convertMixer2Internal;
+            volume.convertInternal2External = (*curve)->convertInternal2External;
+            return &volume;
+        }
 
     return NULL;
 }
 
-int initVolume(void) {
+static int initVolume(void) {
     /* Initialize some values*/
     common_data.volume_level_status = -1;
     common_data.volume_out_timeout = common_data.volume_in_timeout = 0;
@@ -74,6 +87,9 @@ int initVolume(void) {
         return EXIT_FAILURE;
     }
     validateConfigBool(&config, "volume.discrete", &common_data.discrete_volume, 1);
+    if(!common_data.discrete_volume && strcmp("linear", common_data.volume->curve) != 0) {
+        syslog(LOG_ERR, "[Error] Volume curve must be 'linear' when using relative volume control");
+    }
     if(!common_data.discrete_volume && validateConfigInt(&config, "volume.multiplier", 
     &common_data.nd_vol_multiplier, -1, 1, 100, 1) == EXIT_FAILURE)
         return EXIT_FAILURE;
@@ -99,17 +115,10 @@ int initVolume(void) {
     common_data.initial_volume_min = common_data.volume_min;
     common_data.initial_volume_max = common_data.volume_max;
     
-    /* Set and initialise communication interface */
-	const char *volumeCurve = NULL;
-	config_lookup_string(&config, "volume.curve", &volumeCurve);
-    if(!(common_data.volumeCurve = getVolumeCurve(volumeCurve))) {
-    	syslog(LOG_ERR, "[Error] Volume curve is not recognised: %s", volumeCurve);
-        return EXIT_FAILURE;
-    };
-       
+    return EXIT_SUCCESS;
 }
 
-int processVolume(double *action_lookup) {
+static int processVolume(double *volumeExternal) {
     // If true, volume hasn't been fully initialized yet.
     if(common_data.alsa_volume_max == common_data.alsa_volume_min)
         return EXIT_SUCCESS;
@@ -134,7 +143,7 @@ int processVolume(double *action_lookup) {
     /* add adjustment if input and output volume range is different
      * eg cp800: (receiverVolume + 94) * 0.926 (according to control4 driver). */
      
-    double volume_level = *action_lookup;
+    double volume_level = *volumeExternal;
 	if(common_data.responseDivergent)
 		volume_level = (volume_level + common_data.responsePreOffset) * common_data.responseMultiplier + common_data.responsePostOffset;
     
@@ -146,7 +155,7 @@ int processVolume(double *action_lookup) {
         else
             common_data.volume_max = common_data.initial_volume_max;
 
-        common_data.volumeCurve->regenerateMultipliers();
+        common_data.volume->regenerateMultipliers();
         
         syslog(LOG_DEBUG, "Volume upper range has been adjusted: %i -> %i", 
         common_data.initial_volume_max, common_data.volume_max);
@@ -158,7 +167,7 @@ int processVolume(double *action_lookup) {
         else
             common_data.volume_min = common_data.initial_volume_min;
 
-        common_data.volumeCurve->regenerateMultipliers();
+        common_data.volume->regenerateMultipliers();
         
         syslog(LOG_DEBUG, "Volume level lower range has been adjusted: %i -> %i",
         common_data.initial_volume_min, common_data.volume_min);
@@ -174,10 +183,12 @@ int processVolume(double *action_lookup) {
     }
     
     common_data.volume_level_status = volume_level;
-    common_data.volumeCurve->convertExternal2Mixer(&volume_level);
+    common_data.volume->convertExternal2Mixer(&volume_level);
     
-    if(setMixer((int)volume_level) != 0) // removed ceil(), caused erange due to rounding errors (if necessary convert to ceil(float) to eliminate small rounding errors?).
-        syslog(LOG_WARNING, "Setting mixer failed");
+    syslog(LOG_DEBUG, "Volume level 0: %f - %f",common_data.volume_level_status, volume_level);
+    
+    setMixer((int)volume_level); // removed ceil(), caused erange due to rounding errors (if necessary convert to ceil(float) to eliminate small rounding errors?).
+    
     common_data.volume_out_timeout = DEFAULT_PROCESS_TIMEOUT_OUT;
     
     syslog(LOG_DEBUG, "Volume level mutation (ext. initiated): ext. (int.): %.2f (%.2f)", common_data.volume_level_status, volume_level);
@@ -189,6 +200,6 @@ int processVolume(double *action_lookup) {
 } /* end processVolume */
 
 
-void deinitVolume() {
+static void deinitVolume(void) {
 
 }

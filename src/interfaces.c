@@ -18,6 +18,7 @@
  
 #include <stdio.h>
 #include <string.h>
+
 #include "synchronator.h"
 #include "interfaces.h"
 

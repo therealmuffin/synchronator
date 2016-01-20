@@ -15,10 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ****************************************************************************/
 
-//#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
+
 #include "synchronator.h"
 #include "verifyConfig.h"
 

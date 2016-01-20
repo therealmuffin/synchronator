@@ -15,9 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ****************************************************************************/
 
- 
+
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
+
 #include "processData.h"
 
 
@@ -29,7 +32,6 @@ static process_method_t *processMethods[] = {
     &processAscii,
     NULL
 };
-
 
 process_method_t *getProcessMethod(const char *name) {
     process_method_t **process_type;
@@ -43,4 +45,83 @@ process_method_t *getProcessMethod(const char *name) {
             return *process_type;
 
     return NULL;
+}
+
+/* Device status functions + data */
+
+static int updateStatus(const char *name, const char *value);
+static void retrieveStatus(const char *name, const char **value);
+static void deinitStatus(void);
+
+struct status_t {
+    const char *name;
+    const char *value;
+    struct status_t *nextStatus;
+};
+typedef struct status_t status_t;
+
+statusInfo_t statusInfo = {
+    .update = &updateStatus,
+    .retrieve = &retrieveStatus,
+    .deinit = &deinitStatus
+};
+
+static status_t *statusRoot = NULL;
+
+static int updateStatus(const char *name, const char *value) {
+    status_t *statusCurrent = statusRoot;
+    
+    if(statusRoot != NULL) {
+        while(1) {
+            if (strcmp(name, statusCurrent->name) == 0) {
+                statusCurrent->value = value;
+                return EXIT_SUCCESS;
+            }
+            if(statusCurrent->nextStatus == NULL)
+                break;
+            statusCurrent = statusCurrent->nextStatus;
+        }
+        statusCurrent->nextStatus = (status_t *)malloc(sizeof(status_t));
+        statusCurrent = statusCurrent->nextStatus;
+    }
+    else {
+        statusRoot = (status_t *)malloc(sizeof(status_t));
+        statusCurrent = statusRoot;
+    }
+    
+    if (statusCurrent == NULL) {
+        syslog(LOG_ERR, "Could not save status: out of memory?");
+        return EXIT_FAILURE;
+    }
+
+    statusCurrent->name = name;
+    statusCurrent->value = value;
+    statusCurrent->nextStatus = NULL;
+
+    return EXIT_SUCCESS;
+}
+
+static void retrieveStatus(const char *name, const char **value) {
+    status_t *statusCurrent = statusRoot;
+    
+    while(statusCurrent != NULL) {
+        if (strcmp(name, statusCurrent->name) == 0) {
+            *value = statusCurrent->value;
+            return;
+        }
+        statusCurrent = statusCurrent->nextStatus;
+    }
+    
+    *value = NULL;
+}
+
+static void deinitStatus(void) {
+    status_t *statusCurrent = statusRoot;
+    status_t *statusBackup;
+    while(statusCurrent != NULL) {
+        statusBackup = statusCurrent->nextStatus;
+        syslog(LOG_DEBUG, "Deleted status: %s", statusCurrent->name);
+        free(statusCurrent);
+        statusCurrent = statusBackup;
+    }
 }

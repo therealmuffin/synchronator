@@ -34,6 +34,7 @@
   31  */
 
 #include <math.h>
+
 #include "volume.h"
 #include "common.h"
 
@@ -41,40 +42,41 @@ static void help(void);
 static void regenerateMultipliers(void);
 static void convertExternal2Mixer(double *volume);
 static void convertMixer2Internal(long *volume);
+static void convertInternal2External(long *volumeInternal, double *volumeExternal);
 
 volumeCurve_t volumeCurveLog = {
     .name = "log",
     .help = &help,
     .regenerateMultipliers = &regenerateMultipliers,
     .convertExternal2Mixer = &convertExternal2Mixer,
-    .convertMixer2Internal = &convertMixer2Internal
-    
+    .convertMixer2Internal = &convertMixer2Internal,
+    .convertInternal2External = &convertInternal2External
 };
 
 static double multiplierNormalize;
 static double multiplierExtToMixer;
+static double multiplierIntToExt;
 
 static void help(void) {
     printf("Log\n"
           );
 }
 
-
-// perhaps long int and increase range to 100000 to allow for 
+// perhaps long int and increase range to 100000 to allow for ...
 static void regenerateMultipliers(void) {
-    common_data.multiplierIntToDevice = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
-    multiplierExtToMixer = ((double)common_data.volume_max - (double)common_data.volume_min) / (double)common_data.alsa_volume_range;
-    multiplierNormalize = ((double)common_data.volume_max - (double)common_data.volume_min) / (100-0);
+    multiplierIntToExt = ((double)common_data.volume_max - (double)common_data.volume_min) / 100.0f;
+    multiplierExtToMixer = (double)common_data.alsa_volume_range / 100.0f;
+    multiplierNormalize = ((double)common_data.volume_max - (double)common_data.volume_min) / 100.0f;
 }
 
 static void convertExternal2Mixer(double *volume) {
     *volume = ((*volume - (double)common_data.volume_min) / multiplierNormalize);
-    *volume = pow(10,*volume/50); // 50 vs 84,9485
+    *volume = pow(10,*volume/50); // 50 vs 84,9485    
     
     if(*volume<0)
         *volume = 0;
 
-    *volume = (*volume / multiplierExtToMixer) + (double)common_data.alsa_volume_min;
+    *volume = (*volume * multiplierExtToMixer) + (double)common_data.alsa_volume_min;
 }
 
 static void convertMixer2Internal(long *volume) {
@@ -84,4 +86,8 @@ static void convertMixer2Internal(long *volume) {
     }
     
     *volume = 50*log10(*volume);
+}
+
+static void convertInternal2External(long *volumeInternal, double *volumeExternal) {
+    *volumeExternal = (*volumeInternal * multiplierIntToExt) + common_data.volume_min;
 }

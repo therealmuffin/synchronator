@@ -15,21 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ****************************************************************************/
 
-#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
 #include <syslog.h>
-#include "synchronator.h"
-#include "common.h"
-
 /* Message queue */
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include "synchronator.h"
+#include "common.h"
 
 
 /* Create the file required for the message queue with 722 permissions */
@@ -104,11 +104,13 @@ int watchMsQ(void) {
                 syslog(LOG_WARNING, "Volume level is out of range: %s [0-100]\n", input_value);
                 continue;
             }
-            if(common_data.process->compileCommand(input_command, &input_volume) == EXIT_FAILURE)
+            
+            common_data.volume->convertMixer2Internal(&input_volume);
+            if(common_data.process->compileVolumeCommand(&input_volume) == EXIT_FAILURE)
                 raise(SIGTERM);
         }
         else            
-            if(common_data.process->compileCommand(input_command, input_value) == EXIT_FAILURE)
+            if(common_data.process->compileDeviceCommand(input_command, input_value) == EXIT_FAILURE)
                 raise(SIGTERM);
     } /* end infinite msq loop */
     

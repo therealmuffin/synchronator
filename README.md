@@ -18,7 +18,7 @@ The only requirement for audio applications is that a different device can be se
 - Music Player Daemon (MPD)
 - UPMPD (DLNA/OpenHome)
 - Shairport and derivatives (Airplay)
-- XBMC (requires small change in sourcecode)
+- Kodi (XBMC) (requires small change in sourcecode)
 
 
 ## Requirements for Hi-Fi amplifiers

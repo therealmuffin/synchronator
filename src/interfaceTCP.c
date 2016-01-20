@@ -22,29 +22,30 @@
 #include <unistd.h> 
 #include <signal.h>
 #include <errno.h>
-#include <syslog.h>
 #include <sys/types.h>
 #include <string.h>
+#include <syslog.h>
 #include <libconfig.h>
-#include "verifyConfig.h"
-#include "synchronator.h"
-#include "common.h"
-#include "interfaces.h"
-
 /* TCP/IP interface */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include "verifyConfig.h"
+#include "synchronator.h"
+#include "common.h"
+#include "interfaces.h"
+
 static void help(void);
 static int init(void);
 static int initConnect(void);
 static int initBind(void);
 static int deinit(void);
-static int sendTCP2InterfaceFD(const void *message, size_t messageLength);
-static int sendTCP(const void *message, size_t messageLength, int *address);
 static int sendDummy(const void *message, size_t messageLength);
+static int sendTCP2InterfaceFD(const void *message, size_t messageLength);
+static int replyTCP(const void *message, size_t messageLength);
+static int sendTCP(const void *message, size_t messageLength, int *address);
 static void *listenTCP(void *arg);
 
 
@@ -53,13 +54,14 @@ interface_t interface_tcp = {
     .help = &help,
     .init = &init,
     .deinit = &deinit,
+    .reply = replyTCP,
     .send = &sendTCP2InterfaceFD,
     .listen = &listenTCP
 };
 
 static pthread_mutex_t interfaceLock;
 struct addrinfo *addrinfoResults, *addresInfo;
-static int interfaceFD = -1, listenFD = -1;
+static int interfaceFD = -1, listenFD = -1, currentFD = -1;
 static int maxFD = 0;
 static int maxConnections, listenTarget;
 static int totalConnections = 0;
@@ -262,6 +264,13 @@ static int sendTCP2InterfaceFD(const void *message, size_t messageLength) {
         return EXIT_SUCCESS;
 }
 
+static int replyTCP(const void *message, size_t messageLength) {
+    if(sendTCP(message, messageLength, &currentFD) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    else
+        return EXIT_SUCCESS;
+}
+
 static int sendTCP(const void *message, size_t messageLength, int *address) {
     int bytesSend = 0;
     
@@ -388,7 +397,9 @@ static void *listenTCP(void *arg) {
                         if(echoRx)
                             sendTCP(interfaceRxPtr, bytesReceived, &countFD);
                         interfaceRxBuffer[bytesReceived+leftovers] = '\0';
-                        // if implementing reply, set global FD so it can answering through correct connection
+                        
+                        currentFD = countFD; // saving in case of reply needed
+                        
                         leftovers = common_data.process->strip_raw_input(interfaceRxBuffer, bytesReceived+leftovers);
                         syslog(LOG_DEBUG, "Leftovers in buffer (bytes read, #leftovers): %s (%i, %i)", 
                             interfaceRxBuffer, bytesReceived, leftovers);

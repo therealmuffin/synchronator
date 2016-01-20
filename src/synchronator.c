@@ -15,26 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ****************************************************************************/
 
-//#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
+#include <fcntl.h> // for O_CREATE etc...
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
-#include <syslog.h>
-#include <fcntl.h> // for O_CREATE etc...
-
-/* External libraries  */
-#include <libconfig.h>
 #include <pthread.h>
+#include <syslog.h>
+#include <libconfig.h>
 
-/* local headers */
 #include "synchronator.h"
 #include "common.h"
 #include "verifyConfig.h"
+#include "volume.h"
 #include "interfaces.h"
 #include "processData.h"
 #ifndef DISABLE_MSQ
@@ -58,7 +56,6 @@ int synchronatord(char *customConfigLocation);
 int init(void);
 int daemonize(void);
 void *queryStatus(void *arg);
-int processVolume(double *action_lookup);
 void terminate(int signum);
 
 int main(int argc, char *argv[]) {   
@@ -140,6 +137,7 @@ int main(int argc, char *argv[]) {
     mainThread = statusQueryThread = watchMixerThread = interfaceListenThread = pthread_self();
 	common_data.process = NULL;
 	common_data.interface = NULL;
+    common_data.volume = NULL;
     
     struct sigaction signal_action;
     signal_action.sa_handler = terminate;
@@ -305,6 +303,7 @@ int synchronatord(char *customConfigLocation) {
 int init(void) {
     int status;
     config_setting_t *conf_setting = NULL;
+	const char *conf_value = NULL;
     
 	/* Now the configuration file is read, we don't need to know the location
 	 * of the application anymore. We'll change working directory to root */
@@ -330,25 +329,35 @@ int init(void) {
     &common_data.statusQueryInterval, -1, 0, 255, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-    /* initialise volume variables/functions */
-    if(initVolume() == EXIT_FAILURE)
+    /* Set volume (curve) functions */
+	conf_value = NULL;
+	config_lookup_string(&config, "volume.curve", &conf_value);
+    if(!(common_data.volume = getVolume(&conf_value))) {
+    	syslog(LOG_ERR, "[Error] Volume curve is not recognised: %s", conf_value);
+        return EXIT_FAILURE;
+    }
+    else {
+    	syslog(LOG_ERR, "[OK] Volume.curve: %s", conf_value);
+    }
+    /* initialise volume variables */
+    if(common_data.volume->init() == EXIT_FAILURE)
     	return EXIT_FAILURE;
     
     /* Set and initialise process type */
-	const char *protocol = NULL;
-	config_lookup_string(&config, "data_type", &protocol);
-    if(!(common_data.process = getProcessMethod(protocol))) {
-    	syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", protocol);
+	conf_value = NULL;
+	config_lookup_string(&config, "data_type", &conf_value);
+    if(!(common_data.process = getProcessMethod(conf_value))) {
+    	syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }
     if(common_data.process->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
     
     /* Set and initialise communication interface */
-    protocol = NULL;
-	config_lookup_string(&config, "interface", &protocol);
-    if(!(common_data.interface = getInterface(protocol))) {
-    	syslog(LOG_ERR, "[Error] Setting 'interface' is not recognised: %s", protocol);
+    conf_value = NULL;
+	config_lookup_string(&config, "interface", &conf_value);
+    if(!(common_data.interface = getInterface(conf_value))) {
+    	syslog(LOG_ERR, "[Error] Setting 'interface' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     };
     if(common_data.interface->init() == EXIT_FAILURE)
@@ -359,7 +368,7 @@ int init(void) {
     	return EXIT_FAILURE;
 
 	/* init multipliers */
-	common_data.volumeCurve->regenerateMultipliers();
+	common_data.volume->regenerateMultipliers();
 
 #ifndef DISABLE_MSQ
 	/* initialise message queue */
@@ -428,7 +437,9 @@ void terminate(int signum) {
 		common_data.process->deinit();
 	
 	deinitMixer();
-	deinitVolume();
+	if(common_data.volume)
+		common_data.volume->deinit();
+	statusInfo.deinit();
     config_destroy(&config);
 	
     pthread_mutex_destroy(&lockConfig);

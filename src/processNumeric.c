@@ -15,25 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  ****************************************************************************/
 
-//#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <fcntl.h> // writing status files
 #include <unistd.h>
 #include <sys/types.h> 
 #include <stdint.h> // declares uint8_t a.o.
-#include <string.h>
-#include <math.h>
+//#include <math.h>
 #include <pthread.h>
 #include <signal.h>
 #include <errno.h>
 #include <syslog.h>
 #include <libconfig.h>
+
 #include "synchronator.h"
 #include "common.h"
 #include "verifyConfig.h"
 #include "processData.h"
 
-#include <fcntl.h>
 
 typedef struct {
     /* Points to buffer that is send through serial interface + reference to sections */
@@ -51,8 +52,13 @@ static dechex_data_t dechex_data;
 
 static void help(void);
 static int init(void);
-static int deinit(void);
-static int compileCommand(char *header, void *command);
+static void deinit(void);
+static int sendVolumeCommand(long *volumeInternal);
+static int replyVolumeCommand(long *volumeInternal);
+static int compileVolumeCommand(long *volumeInternal);
+static int sendDeviceCommand(char *category, char *action);
+static int replyDeviceCommand(char *category, char *action);
+static int compileDeviceCommand(char *header, char *action);
 static int processCommand(int *category_lookup, int *action_lookup);
 static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_read);
 
@@ -61,7 +67,8 @@ process_method_t processNumeric = {
     .help = &help,
     .init = &init,
     .deinit = &deinit,
-    .compileCommand = &compileCommand,
+    .compileVolumeCommand = &sendVolumeCommand,
+    .compileDeviceCommand = &sendDeviceCommand,
     .strip_raw_input = &strip_raw_input
 };
 
@@ -71,7 +78,6 @@ static void help(void) {
 }
 
 static int init(void) {
-
     config_setting_t *conf_setting = NULL;
 	int count;
     int main_count;
@@ -82,7 +88,6 @@ static int init(void) {
     dechex_data.serial_command[1] = NULL;
     dechex_data.statusQuery = NULL;
     
-    
 // common_data.volume_min >= common_data.volume_max ||  -> Can occur, see Cambridge Audio ->  && |min < max|
     if((common_data.volume_min < 0 || common_data.volume_min > 255) ||
         (common_data.volume_max < 0 || common_data.volume_max > 255)) {
@@ -90,7 +95,7 @@ static int init(void) {
         return EXIT_FAILURE;
     }
     
-    if(ceilf(common_data.responseMultiplier) != common_data.responseMultiplier) { // might as well check (int)common.data.responseMultiplier !=...
+    if((int)common_data.responseMultiplier != common_data.responseMultiplier) { // might as well check (int)common.data.responseMultiplier !=... ceilf
         syslog(LOG_ERR, "[ERROR] Numeric does not 'float'! Setting 'volume.response.multiplier' \
         	is not an integer: %.2f", common_data.responseMultiplier);
         return EXIT_FAILURE;
@@ -148,126 +153,174 @@ static int init(void) {
 	return EXIT_SUCCESS;
 } /* end init() */
 
-
-static int compileCommand(char *category, void *action) {
-        
-    /* Volume commands come in at a much higher volume, therefore, it takes a few
-     * shortcuts rather than having libconfig do the work */
-    if(strcmp(category, "volume") == 0) {
-    
-        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-        pthread_mutex_lock(&lockProcess);
-    
-        if(common_data.volume_out_timeout > 0) {
-            common_data.volume_out_timeout--;
-            
-            pthread_mutex_unlock(&lockProcess);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            
-            syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i ", common_data.volume_out_timeout);
-            return EXIT_SUCCESS;
-        }
-        
-        int *volume_level = (int *)action;
-        
-        if(*volume_level < 0 || *volume_level > 100) {
-            syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %i", *volume_level);
-            
-            pthread_mutex_unlock(&lockProcess);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            
-            return EXIT_SUCCESS;
-        }
-        
-        if(common_data.discrete_volume) {
-//            float volume_multiplier = ((float)common_data.volume_max - (float)common_data.volume_min) / (100-0);
-            *volume_level = (*volume_level * common_data.multiplierIntToDevice) + common_data.volume_min;
-            *dechex_data.event_header[0] = dechex_data.volume_header[0];
-            *dechex_data.event[0] = *volume_level;
-        }
-        else {
-            if(common_data.volume_level_status == *volume_level) { // to catch a reset of the volume level
-            
-                pthread_mutex_unlock(&lockProcess);
-                pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-                
-                return EXIT_SUCCESS;
-            }
-            int* volumeMutation;
-            if(*volume_level > common_data.volume_level_status)
-                volumeMutation = &dechex_data.volumeMutationPositive;
-            else
-                volumeMutation = &dechex_data.volumeMutationNegative;
-            *dechex_data.event_header[0] = dechex_data.volume_header[0];
-            *dechex_data.event[0] = *volumeMutation;
-            
-            if(*volume_level < 25 || *volume_level > 75) {
-                if((setMixer((common_data.alsa_volume_range/2)+common_data.alsa_volume_min)) != EXIT_SUCCESS)
-                    syslog(LOG_WARNING, "Setting mixer failed");
-                syslog(LOG_DEBUG, "Mixer volume level: %i", *volume_level);
-                *volume_level = 50;
-                common_data.volume_out_timeout = 1;
-            }
-        }
-        
-        common_data.volume_level_status = *volume_level;
-        common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
-		syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
-			common_data.volume_level_status);
-        
-        pthread_mutex_unlock(&lockProcess);
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-        
-    }
-    else {
-        char config_query[CONFIG_QUERY_SIZE];
-        int command;
-        
-        snprintf(config_query, CONFIG_QUERY_SIZE, "%s.%s.[0]", category, (char *)action);
-        
-    	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-        pthread_mutex_lock(&lockConfig);
-        
-        if(!config_lookup_int(&config, config_query, &command)) {
-        
-            pthread_mutex_unlock(&lockConfig);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            
-            syslog(LOG_WARNING, "Could not identify command: %s", (char *)action);
-            return EXIT_SUCCESS;
-        }
-        if(command < 0 || command > 255) {
-        
-            pthread_mutex_unlock(&lockConfig);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            
-            syslog(LOG_WARNING, "Value for command \"%s\" is not valid: %i", (char *)action, command);
-            return EXIT_SUCCESS;
-        }
-        *dechex_data.event[0] = command;
-        
-        snprintf(config_query, CONFIG_QUERY_SIZE, "%s.header.[0]", category);
-        if(!config_lookup_int(&config, config_query, &command)) {
-        
-            pthread_mutex_unlock(&lockConfig);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-            
-            syslog(LOG_WARNING, "Could not find header for message: %s", category);
-            return EXIT_SUCCESS;
-        }
-        
-        pthread_mutex_unlock(&lockConfig);
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-        
-        if(command < 0 || command > 255) {
-            syslog(LOG_WARNING, "Value for header \"%s\" is not valid: %i", category, command);
-            return EXIT_SUCCESS;
-        }
-        *dechex_data.event_header[0] = command;
-    }
-    
+static int sendVolumeCommand(long *volumeInternal) {
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+	pthread_mutex_lock(&lockProcess);
+	
+	if(common_data.volume_out_timeout > 0) {
+		common_data.volume_out_timeout--;
+		
+		syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i ", common_data.volume_out_timeout);
+		
+		pthread_mutex_unlock(&lockProcess);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		
+		return EXIT_SUCCESS;
+	}
+	
+	if(compileVolumeCommand(volumeInternal) == EXIT_FAILURE) {
+		pthread_mutex_unlock(&lockProcess);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		
+		return EXIT_SUCCESS;
+	}
+	
+	common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
+	syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
+		common_data.volume_level_status);
+	
     if(common_data.interface->send(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
         return EXIT_FAILURE;
+    
+	pthread_mutex_unlock(&lockProcess);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	
+    return EXIT_SUCCESS;
+}
+
+static int replyVolumeCommand(long *volumeInternal) {
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+	pthread_mutex_lock(&lockProcess);
+	
+	if(compileVolumeCommand(volumeInternal) == EXIT_FAILURE) {
+		pthread_mutex_unlock(&lockProcess);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		
+		return EXIT_SUCCESS;
+	}
+	
+	syslog(LOG_DEBUG, "Replied current external volume level: %.2f", common_data.volume_level_status);
+	
+    if(common_data.interface->reply(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    
+	pthread_mutex_unlock(&lockProcess);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	
+    return EXIT_SUCCESS;
+}
+
+static int compileVolumeCommand(long *volumeInternal) {
+	
+	if(*volumeInternal < 0 || *volumeInternal > 100) {
+		syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %ld", *volumeInternal);
+		
+		return EXIT_FAILURE;
+	}
+	
+	if(common_data.discrete_volume) {
+		double volumeExternal;
+		common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
+		*dechex_data.event_header[0] = dechex_data.volume_header[0];
+		*dechex_data.event[0] = (int)volumeExternal;
+		
+		common_data.volume_level_status = volumeExternal;
+	}
+	else {
+		if(common_data.volume_level_status == *volumeInternal) // to catch a reset of the volume level
+			return EXIT_FAILURE;
+		
+		*dechex_data.event_header[0] = dechex_data.volume_header[0];
+		if(*volumeInternal > common_data.volume_level_status)
+			*dechex_data.event[0] = dechex_data.volumeMutationPositive;
+		else
+			*dechex_data.event[0] = dechex_data.volumeMutationNegative;
+		
+		if(*volumeInternal < 25 || *volumeInternal > 75) {
+			if((setMixer((common_data.alsa_volume_range/2)+common_data.alsa_volume_min)) == EXIT_FAILURE)
+				return EXIT_FAILURE;
+			
+			syslog(LOG_DEBUG, "Mixer volume level: %ld", *volumeInternal);
+			*volumeInternal = 50;
+			common_data.volume_out_timeout = 1; // really necessary? 
+		}
+		
+		common_data.volume_level_status = *volumeInternal;
+	}
+	
+	return EXIT_SUCCESS;
+}
+
+static int sendDeviceCommand(char *category, char *action) {
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+	pthread_mutex_lock(&lockConfig);
+	
+	if(compileDeviceCommand(category, action) == EXIT_FAILURE) {
+		pthread_mutex_unlock(&lockConfig);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		
+		return EXIT_SUCCESS;
+	}
+	
+    if(common_data.interface->send(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+	
+	pthread_mutex_unlock(&lockConfig);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+    return EXIT_SUCCESS;
+}
+
+static int replyDeviceCommand(char *category, char *action) {
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+	pthread_mutex_lock(&lockConfig);
+	
+	if(compileDeviceCommand(category, action) == EXIT_FAILURE) {
+		pthread_mutex_unlock(&lockConfig);
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		
+		return EXIT_SUCCESS;
+	}
+	
+    if(common_data.interface->reply(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+	
+	pthread_mutex_unlock(&lockConfig);
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+    return EXIT_SUCCESS;
+}
+
+static int compileDeviceCommand(char *category, char *action) {
+	char config_query[CONFIG_QUERY_SIZE];
+	int command;
+	
+	snprintf(config_query, CONFIG_QUERY_SIZE, "%s.%s.[0]", category, (char *)action);
+	
+	if(!config_lookup_int(&config, config_query, &command)) {
+		
+		syslog(LOG_WARNING, "Could not identify command: %s", (char *)action);
+		return EXIT_FAILURE;
+	}
+	if(command < 0 || command > 255) {
+		
+		syslog(LOG_WARNING, "Value for command \"%s\" is not valid: %i", (char *)action, command);
+		return EXIT_FAILURE;
+	}
+	*dechex_data.event[0] = command;
+	
+	snprintf(config_query, CONFIG_QUERY_SIZE, "%s.header.[0]", category);
+	if(!config_lookup_int(&config, config_query, &command)) {
+		
+		syslog(LOG_WARNING, "Could not find header for message: %s", category);
+		return EXIT_FAILURE;
+	}
+	
+	if(command < 0 || command > 255) {
+		syslog(LOG_WARNING, "Value for header \"%s\" is not valid: %i", category, command);
+		return EXIT_FAILURE;
+	}
+	*dechex_data.event_header[0] = command;
     
     return EXIT_SUCCESS;
 } /* end serial_send_dechex */
@@ -281,6 +334,8 @@ static int processCommand(int *category_lookup, int *action_lookup) {
     config_setting_t *config_root = NULL;
     config_setting_t *config_child = NULL;
     config_setting_t *config_entry = NULL;
+    const char *current_header = NULL;
+    const char *current_event = NULL;
     char *char_setting = NULL;
     int int_setting = -1;
 
@@ -302,7 +357,7 @@ static int processCommand(int *category_lookup, int *action_lookup) {
         int_setting != *category_lookup)
             continue;
         
-        char_setting = config_setting_name(config_child);
+        current_header = config_setting_name(config_child);
         total_child_entries = config_setting_length(config_child);
         
         for(entry_count = 0; entry_count < total_child_entries; entry_count++) {
@@ -311,7 +366,7 @@ static int processCommand(int *category_lookup, int *action_lookup) {
             int_setting != *action_lookup)
                 continue;
             
-            snprintf(status_file_path, MAX_PATH_LENGTH, "%s/%s.%s", TEMPLOCATION, PROGRAM_NAME, char_setting);
+            snprintf(status_file_path, MAX_PATH_LENGTH, "%s/%s.%s", TEMPLOCATION, PROGRAM_NAME, current_header);
             if((status_file = open(status_file_path, O_RDWR|O_CREAT|O_CLOEXEC, LOCKMODE)) < 0) {
             
                 pthread_mutex_unlock(&lockConfig);
@@ -320,12 +375,13 @@ static int processCommand(int *category_lookup, int *action_lookup) {
                 return EXIT_FAILURE;
             }
     
-            char_setting = config_setting_name(config_entry);
+            current_event = config_setting_name(config_entry);
             ftruncate(status_file, 0);
-            write(status_file, char_setting, strlen(char_setting));
+            write(status_file, current_event, strlen(current_event));
             close(status_file);
             
-            syslog(LOG_DEBUG, "Written '%s' to file '%s'", char_setting, status_file_path);
+			statusInfo.update(current_header, current_event);
+            syslog(LOG_DEBUG, "Status updated event (header): %s (%s)", current_event, current_header);
             break;
         }
     }
@@ -393,7 +449,7 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
 			
 			if(message_category == dechex_data.volume_header[common_data.diff_commands] || alwaysVolume) {
 				volume_level = (double)message_action;
-				status = processVolume(&volume_level);
+				status = common_data.volume->process(&volume_level);
 			}
 			else
 				status = processCommand(&message_category, &message_action);
@@ -414,13 +470,12 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
     return EXIT_SUCCESS; // due to the static vars it will remember data between runs...
 } /* serial_strip_dechex */
 
-static int deinit(void) {
+static void deinit(void) {
     if(dechex_data.serial_command[0] != NULL)
         free(dechex_data.serial_command[0]);
     if(dechex_data.serial_command[1] != NULL)
         free(dechex_data.serial_command[1]);
     if(dechex_data.statusQuery != NULL)
         free(dechex_data.statusQuery);
-    
-	return EXIT_SUCCESS;
+        
 }
