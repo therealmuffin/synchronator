@@ -337,7 +337,7 @@ int init(void) {
         return EXIT_FAILURE;
     }
     else {
-    	syslog(LOG_ERR, "[OK] Volume.curve: %s", conf_value);
+    	syslog(LOG_INFO, "[OK] Volume.curve: %s", conf_value);
     }
     /* initialise volume variables */
     if(common_data.volume->init() == EXIT_FAILURE)

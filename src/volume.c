@@ -185,8 +185,6 @@ static int processVolume(double *volumeExternal) {
     common_data.volume_level_status = volume_level;
     common_data.volume->convertExternal2Mixer(&volume_level);
     
-    syslog(LOG_DEBUG, "Volume level 0: %f - %f",common_data.volume_level_status, volume_level);
-    
     setMixer((int)volume_level); // removed ceil(), caused erange due to rounding errors (if necessary convert to ceil(float) to eliminate small rounding errors?).
     
     common_data.volume_out_timeout = DEFAULT_PROCESS_TIMEOUT_OUT;
