@@ -25,7 +25,7 @@ The only requirement for audio applications is that a different device can be se
 
 Obviously, for a computer to control an amplifier that amplifier needs to be controllable. Many amplifiers are controllable via a serial connection (e.g. RS232, TTL, etc). 
 
-Currently only the serial interface is fully supported (thus RS232, TTL, etc). Support for I2C and TCP is under development and currently being tested.
+Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this moment I2C devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.
 
 ### Supported amplifiers/brands
 - Cambridge Audio
