@@ -50,14 +50,16 @@ install: synchronator
 		install -m 755 -d $(PREFIX)/bin
 		install -m 755 $^ $(PREFIX)/bin/$(PROGRAM-PREFIX)$^$(PROGRAM-SUFFIX)
 
-GITREV=$(shell git describe --always)
+GITREV=$(shell git describe --tags)
+GITCOMM=$(shell git describe --always)
 DIRTY:=$(shell if ! git diff --quiet --exit-code; then echo -dirty; fi)
-VERSION=$(GITREV)$(DIRTY)
+VERSION=$(GITREV)$(DIRTY) ($(GITCOMM))
+
 __version_file:
 	@if [ ! -f version.h -o "`cat .version 2>/dev/null`" != '$(VERSION)' ]; then \
 		echo '#define PROGRAM_VERSION "$(VERSION)"' > version.h; \
 	fi
-	echo '#include "version.h"' >> config.h
+	@echo '#include "version.h"' >> config.h
 
 %.o: %.c $(DEPS)
 		$(CC) -c $(CFLAGS) $< -DINCLUDE_CONFIG
