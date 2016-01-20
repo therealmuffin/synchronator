@@ -114,8 +114,10 @@ static int init(void) {
 		return EXIT_FAILURE;
         if(common_data.send_query) common_data.statusQueryLength = strlen(common_data.statusQuery);
 
-	if(validateConfigString(&config, "response.indicator", &ascii_data.requestIndicator, -2) == EXIT_SUCCESS)
+	if(config_lookup_string(&config, "response.indicator", &ascii_data.requestIndicator)) {
 		ascii_data.allowRequests = 1;
+        syslog(LOG_INFO, "[OK] response.indicator: %s", ascii_data.requestIndicator);
+	}
         
 	
     return EXIT_SUCCESS;

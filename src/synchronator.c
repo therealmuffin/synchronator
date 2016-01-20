@@ -337,7 +337,7 @@ int init(void) {
         return EXIT_FAILURE;
     }
     else {
-    	syslog(LOG_INFO, "[OK] Volume.curve: %s", conf_value);
+    	syslog(LOG_INFO, "[OK] volume.curve: %s", conf_value);
     }
     /* initialise volume variables */
     if(common_data.volume->init() == EXIT_FAILURE)
@@ -350,6 +350,9 @@ int init(void) {
     	syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }
+    else {
+    	syslog(LOG_INFO, "[OK] data_type: %s", conf_value);
+    }
     if(common_data.process->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
     
@@ -359,7 +362,10 @@ int init(void) {
     if(!(common_data.interface = getInterface(conf_value))) {
     	syslog(LOG_ERR, "[Error] Setting 'interface' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
-    };
+    }
+    else {
+    	syslog(LOG_INFO, "[OK] interface: %s", conf_value);
+    }
     if(common_data.interface->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
         
