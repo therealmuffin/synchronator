@@ -35,12 +35,14 @@ Currently only the serial interface is fully supported (thus RS232, TTL, etc). S
 - Lyngdorf
 - NAD
 - Parasound
+- Devialet
 
 
 ## Features summary
 
 - Synchronisation of volume level changes between Linux and Hi-Fi amplifier
 - HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)
+- Replying to requests (e.g. status input, power, etc)
 
 ## Alternative uses
 

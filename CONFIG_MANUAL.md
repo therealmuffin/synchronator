@@ -90,7 +90,7 @@ discrete - specifies whether to use absolute (TRUE) or relative (FALSE) volume l
 
 header - prefix added to every volume command code (thus post the header defined in the main section)
 
-curve - Volume curve can be linear or logarithmic [linear`*`|log]
+curve - Volume curve can be linear or logarithmic. If volume control is relative, only linear is allowed [linear`*`|log]
 
 ###### [response volume sub-section]
 
@@ -138,13 +138,22 @@ precision - how many numbers behind the dot.
 
 #####[response section]
 
-register - needs to be FALSE to prevent Synchronator from searching it to match incoming command.
-
 indicator - commands stripped from their header and tail, without even_delimiter present as set in the configuration, if this character is matched, it will be processed as an incoming command.
 
-To match incoming requests, requests and their reply's need to be defined. The name of the request needs to match either 'volume' or a name of any of the 'other sections' defined in the configuration file. Each name defines an array. The first value defines whether to reply a default reply (defined by the 3rd value in the array) or the actual value. In the latter it will try to see if it has an answer (what's the current input or is the device powered on or off?). If it can't find the answer, it will revert to the default value set in the 3rd value of the array. In this instance, the 3rd value needs to match any of the commands as defined in the specific section of which this array lends its name. Check the NAD-M51.conf for an example.
+To match incoming requests, requests and their reply's need to be defined. The name of the request (array) needs to match either 'volume' or the name of any of the 'other sections' defined in the configuration file. 
 
-input=(FALSE, "command code + parameter", "usb");
+Each name defines an array containing three values (e.g. 'input=(FALSE, "command code = parameter", "usb")').
+
+1) The first value defines whether to reply a default reply or the actual value (either way defined by the 3rd value in the array) [TRUE|False]
+
+2) The second value defines the request to be matched, stripped from the header and tail defined in the main section
+
+3) In case of a:
+
+- default reply: the 3rd value will be send over the interface (e.g. serial). No header or tail is added. 
+
+- custom reply: Synchronator will attempt to reply the status of that category (e.g. power, input). If the status is unknown, synchronator will reply with the default value as set in this 3rd value. Obviously, this value needs to match any of the names as defined in the section of which this array lends its name. Check the NAD-M51.conf for an example.
+
 
 ### Numeric specific options
 
