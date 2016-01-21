@@ -12,7 +12,7 @@
   <body>
     <section class="page-header">
       <h1 class="project-name">Synchronator</h1>
-      <h2 class="project-tagline">Synchronator brings bit perfect volume control to Hi-Fi systems with Linux (USB audio) as source</h2>
+      <h2 class="project-tagline">Synchronator brings bit perfect volume control to Hi-Fi systems with Linux as source</h2>
       <a href="https://github.com/therealmuffin/synchronator" class="btn">View on GitHub</a>
       <a href="https://github.com/therealmuffin/synchronator/zipball/master" class="btn">Download .zip</a>
       <a href="https://github.com/therealmuffin/synchronator/tarball/master" class="btn">Download .tar.gz</a>
@@ -20,62 +20,64 @@
 
     <section class="main-content">
       <h1>
-<a id="synchronator" class="anchor" href="#synchronator" aria-hidden="true"><span class="octicon octicon-link"></span></a>Synchronator</h1>
+<a id="synchronator" class="anchor" href="#synchronator" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Synchronator</h1>
 
 <p>Synchronator brings bit perfect volume control to Hi-Fi systems with Linux as source. </p>
 
 <p>This enables controll of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, or MPD application a.o.</p>
 
 <h2>
-<a id="technical-background" class="anchor" href="#technical-background" aria-hidden="true"><span class="octicon octicon-link"></span></a>Technical background</h2>
+<a id="technical-background" class="anchor" href="#technical-background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Technical background</h2>
 
 <p>Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP). In addition, changes in volume level at the amplifier side are synced back.</p>
 
 <h2>
-<a id="requirements-for-audio-applications" class="anchor" href="#requirements-for-audio-applications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements for audio applications</h2>
+<a id="requirements-for-audio-applications" class="anchor" href="#requirements-for-audio-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements for audio applications</h2>
 
 <p>The only requirement for audio applications is that a different device can be set for audio and mixer data.</p>
 
 <h3>
-<a id="known-supported-applications" class="anchor" href="#known-supported-applications" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known supported applications</h3>
+<a id="known-supported-applications" class="anchor" href="#known-supported-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known supported applications</h3>
 
 <ul>
 <li>Music Player Daemon (MPD)</li>
 <li>UPMPD (DLNA/OpenHome)</li>
 <li>Shairport and derivatives (Airplay)</li>
-<li>XBMC (requires small change in sourcecode)</li>
+<li>Kodi (XBMC) (requires small change in sourcecode)</li>
 </ul>
 
 <h2>
-<a id="requirements-for-hi-fi-amplifiers" class="anchor" href="#requirements-for-hi-fi-amplifiers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements for Hi-Fi amplifiers</h2>
+<a id="requirements-for-hi-fi-amplifiers" class="anchor" href="#requirements-for-hi-fi-amplifiers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements for Hi-Fi amplifiers</h2>
 
 <p>Obviously, for a computer to control an amplifier that amplifier needs to be controllable. Many amplifiers are controllable via a serial connection (e.g. RS232, TTL, etc). </p>
 
-<p>Currently only the serial interface is fully supported (thus RS232, TTL, etc). Support for I2C and TCP is under development and currently being tested.</p>
+<p>Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this moment I2C devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.</p>
 
 <h3>
-<a id="supported-amplifiersbrands" class="anchor" href="#supported-amplifiersbrands" aria-hidden="true"><span class="octicon octicon-link"></span></a>Supported amplifiers/brands</h3>
+<a id="supported-amplifiersbrands" class="anchor" href="#supported-amplifiersbrands" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported amplifiers/brands</h3>
 
 <ul>
 <li>Cambridge Audio</li>
 <li>Carry Audio Design</li>
-<li>Classe</li>
+<li>Classé</li>
 <li>Leema Acoustics</li>
 <li>Lyngdorf</li>
 <li>NAD</li>
 <li>Parasound</li>
+<li>Devialet</li>
 </ul>
 
 <h2>
-<a id="features-summary" class="anchor" href="#features-summary" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features summary</h2>
+<a id="features-summary" class="anchor" href="#features-summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Features summary</h2>
 
 <ul>
 <li>Synchronisation of volume level changes between Linux and Hi-Fi amplifier</li>
 <li>HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)</li>
+<li>Replying to requests (e.g. status input, power, etc)</li>
 </ul>
 
 <h2>
-<a id="untested-alternative-uses" class="anchor" href="#untested-alternative-uses" aria-hidden="true"><span class="octicon octicon-link"></span></a>Untested alternative uses</h2>
+<a id="alternative-uses" class="anchor" href="#alternative-uses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Alternative uses</h2>
 
 <p>Synchronator is designed to synchronise the volume level between Linux and Hi-Fi. However, other applications can be thought of also. By running multiple instances of Synchronator, commands between incompatible devices can be translated. A few examples follow:</p>
 
@@ -85,14 +87,14 @@
 </ul>
 
 <h2>
-<a id="installation-and-configuration" class="anchor" href="#installation-and-configuration" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installation and configuration</h2>
+<a id="installation-and-configuration" class="anchor" href="#installation-and-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation and configuration</h2>
 
 <p>For installation check the installation manual or the extended installation manual</p>
 
 <p>For setting the appropriate configuration settings check the configuration manual</p>
 
 <h2>
-<a id="downloads" class="anchor" href="#downloads" aria-hidden="true"><span class="octicon octicon-link"></span></a>Downloads</h2>
+<a id="downloads" class="anchor" href="#downloads" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Downloads</h2>
 
 <p>Download the configuration library from here:
 <a href="http://www.hyperrealm.com/libconfig/">http://www.hyperrealm.com/libconfig/</a></p>
