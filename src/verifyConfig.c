@@ -56,7 +56,7 @@ int position, int valueMin, int valueMax, int valueDefault) {
             return EXIT_FAILURE;
         } 
         else if (valueDefault == -2) {
-			syslog(LOG_INFO, "[NOTICE] Setting not found, ignoring %s", configSettingSource);
+            syslog(LOG_INFO, "[NOTICE] Setting not found, ignoring %s", configSettingSource);
             return EXIT_FAILURE;
         } 
         else
@@ -64,7 +64,7 @@ int position, int valueMin, int valueMax, int valueDefault) {
     }
     if(!(valueMin == 0 && valueMax == 0) && (configReturnedInt < valueMin || configReturnedInt > valueMax)) {
         syslog(LOG_ERR, "[ERROR] Setting '%s' is out of range: %i [%i-%i]", configSettingSource, 
-        		configReturnedInt, valueMin, valueMax);
+                configReturnedInt, valueMin, valueMax);
         return EXIT_FAILURE;
     }
     *configSettingDestination = configReturnedInt;
@@ -87,7 +87,7 @@ int position, int valueMin, int valueMax, double valueDefault) {
             return EXIT_FAILURE;
         } 
         else if (valueDefault == -2) {
-			syslog(LOG_INFO, "[NOTICE] Setting not found, ignoring %s", configSettingSource);
+            syslog(LOG_INFO, "[NOTICE] Setting not found, ignoring %s", configSettingSource);
             return EXIT_FAILURE;
         } 
         else
@@ -95,7 +95,7 @@ int position, int valueMin, int valueMax, double valueDefault) {
     }
     if(!(valueMin == 0 && valueMax == 0) && (configReturnedDouble < valueMin || configReturnedDouble > valueMax)) {
         syslog(LOG_ERR, "[ERROR] Setting '%s' is out of range: %.2f [%i-%i]", configSettingSource, 
-        		configReturnedDouble, valueMin, valueMax);
+                configReturnedDouble, valueMin, valueMax);
         return EXIT_FAILURE;
     }
     *configSettingDestination = configReturnedDouble;
@@ -105,15 +105,15 @@ int position, int valueMin, int valueMax, double valueDefault) {
 
 int validateConfigBool(config_t *config, char *configSettingSource, int *configSettingDestination, 
 int valueDefault) {
-	const char* boolNaming[2];
-	boolNaming[0] = "FALSE";
-	boolNaming[1] = "TRUE";
-	
+    const char* boolNaming[2];
+    boolNaming[0] = "FALSE";
+    boolNaming[1] = "TRUE";
+    
     if(!config_lookup_bool(config, configSettingSource, configSettingDestination))
         *configSettingDestination = valueDefault;
     else {
         syslog(LOG_INFO, "[OK] %s: %s", configSettingSource, boolNaming[*configSettingDestination]);
         return EXIT_SUCCESS;
     }    
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

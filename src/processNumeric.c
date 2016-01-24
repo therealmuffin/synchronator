@@ -79,10 +79,10 @@ static void help(void) {
 
 static int init(void) {
     config_setting_t *conf_setting = NULL;
-	int count;
+    int count;
     int main_count;
     int int_setting = -1;
-	char config_query[CONFIG_QUERY_SIZE];
+    char config_query[CONFIG_QUERY_SIZE];
 
     dechex_data.serial_command[0] = NULL;
     dechex_data.serial_command[1] = NULL;
@@ -95,232 +95,232 @@ static int init(void) {
         return EXIT_FAILURE;
     }
     
-    if((int)common_data.responseMultiplier != common_data.responseMultiplier) { // might as well check (int)common.data.responseMultiplier !=... ceilf
-        syslog(LOG_ERR, "[ERROR] Numeric does not 'float'! Setting 'volume.response.multiplier' \
-        	is not an integer: %.2f", common_data.responseMultiplier);
+    if((int)common_data.responseMultiplier != common_data.responseMultiplier) {
+        syslog(LOG_ERR, "[ERROR] Numeric does not 'float'! Setting 'volume.response.multiplier'" 
+        				" is not an integer: %.2f", common_data.responseMultiplier);
         return EXIT_FAILURE;
     }
     
-	for(main_count = 0; main_count <= common_data.diff_commands; main_count++) {
-		snprintf(config_query, CONFIG_QUERY_SIZE, "header.[%i]", main_count);
-		if((conf_setting = config_lookup(&config, config_query)) == NULL || config_setting_is_array(conf_setting) == CONFIG_FALSE) {
-			syslog(LOG_INFO, "[NOTICE] Setting not present or not formatted as array, ignoring: %s", config_query);
-			dechex_data.header_length[main_count] = 0;
-		}
-		else
-			dechex_data.header_length[main_count] = config_setting_length(conf_setting);
-		dechex_data.serial_command[main_count] = calloc(dechex_data.header_length[main_count]+3, sizeof(uint8_t*));
-		dechex_data.event_header[main_count] = dechex_data.serial_command[main_count]+dechex_data.header_length[main_count];
-		dechex_data.event[main_count] = dechex_data.event_header[main_count]+1;
-		dechex_data.command_tail[main_count] = dechex_data.event[main_count]+1;
-		dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+3;
-		
-		for(count = 0; count < dechex_data.header_length[main_count]; count++) {
-			if(validateConfigInt(&config, config_query, (int *)&dechex_data.serial_command[main_count][count], 
-			count, 0, 255, -1) == EXIT_FAILURE)
-				return EXIT_FAILURE;
-		}
-		if(validateConfigInt(&config, "tail", (int *)dechex_data.command_tail[main_count], 
-		main_count, 0, 255, -2) == EXIT_FAILURE) {
-			dechex_data.serial_command_length[main_count]--;
-			dechex_data.command_tail[main_count] = NULL;
-		}
-		if(validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], 
-		main_count, 0, 255, -2) == EXIT_FAILURE) {
-			dechex_data.serial_command_length[main_count]--;
-			dechex_data.event[main_count] = dechex_data.event_header[main_count];
-			if(dechex_data.command_tail[main_count] != NULL)
-				dechex_data.command_tail[main_count]--;	
-		}
-	}
-	if(common_data.send_query) {
-		dechex_data.statusQuery = calloc(common_data.statusQueryLength, sizeof(uint8_t*));
-		for(count = 0; count < common_data.statusQueryLength; count++) {
-			if(validateConfigInt(&config, "query.trigger", (int *)&dechex_data.statusQuery[count], 
-			count, 0, 255, -1) == EXIT_FAILURE)
-				return EXIT_FAILURE;
-		}
-		common_data.statusQuery = (const char *)dechex_data.statusQuery;
-	}
-	if(!common_data.discrete_volume && validateConfigInt(&config, "volume.min", 
-	&dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-	if(!common_data.discrete_volume && validateConfigInt(&config, "volume.plus", 
-	&dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
-		return EXIT_FAILURE;
- 	
+    for(main_count = 0; main_count <= common_data.diff_commands; main_count++) {
+        snprintf(config_query, CONFIG_QUERY_SIZE, "header.[%i]", main_count);
+        if((conf_setting = config_lookup(&config, config_query)) == NULL || config_setting_is_array(conf_setting) == CONFIG_FALSE) {
+            syslog(LOG_INFO, "[NOTICE] Setting not present or not formatted as array, ignoring: %s", config_query);
+            dechex_data.header_length[main_count] = 0;
+        }
+        else
+            dechex_data.header_length[main_count] = config_setting_length(conf_setting);
+        dechex_data.serial_command[main_count] = calloc(dechex_data.header_length[main_count]+3, sizeof(uint8_t*));
+        dechex_data.event_header[main_count] = dechex_data.serial_command[main_count]+dechex_data.header_length[main_count];
+        dechex_data.event[main_count] = dechex_data.event_header[main_count]+1;
+        dechex_data.command_tail[main_count] = dechex_data.event[main_count]+1;
+        dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+3;
+        
+        for(count = 0; count < dechex_data.header_length[main_count]; count++) {
+            if(validateConfigInt(&config, config_query, (int *)&dechex_data.serial_command[main_count][count], 
+            count, 0, 255, -1) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        }
+        if(validateConfigInt(&config, "tail", (int *)dechex_data.command_tail[main_count], 
+        main_count, 0, 255, -2) == EXIT_FAILURE) {
+            dechex_data.serial_command_length[main_count]--;
+            dechex_data.command_tail[main_count] = NULL;
+        }
+        if(validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], 
+        main_count, 0, 255, -2) == EXIT_FAILURE) {
+            dechex_data.serial_command_length[main_count]--;
+            dechex_data.event[main_count] = dechex_data.event_header[main_count];
+            if(dechex_data.command_tail[main_count] != NULL)
+                dechex_data.command_tail[main_count]--; 
+        }
+    }
+    if(common_data.send_query) {
+        dechex_data.statusQuery = calloc(common_data.statusQueryLength, sizeof(uint8_t*));
+        for(count = 0; count < common_data.statusQueryLength; count++) {
+            if(validateConfigInt(&config, "query.trigger", (int *)&dechex_data.statusQuery[count], 
+            count, 0, 255, -1) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        }
+        common_data.statusQuery = (const char *)dechex_data.statusQuery;
+    }
+    if(!common_data.discrete_volume && validateConfigInt(&config, "volume.min", 
+    &dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    if(!common_data.discrete_volume && validateConfigInt(&config, "volume.plus", 
+    &dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 } /* end init() */
 
 static int sendVolumeCommand(long *volumeInternal) {
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockProcess);
-	
-	if(common_data.volume_out_timeout > 0) {
-		common_data.volume_out_timeout--;
-		
-		syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i ", common_data.volume_out_timeout);
-		
-		pthread_mutex_unlock(&lockProcess);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
-	if(compileVolumeCommand(volumeInternal) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockProcess);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
-	common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
-	syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
-		common_data.volume_level_status);
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockProcess);
+    
+    if(common_data.volume_out_timeout > 0) {
+        common_data.volume_out_timeout--;
+        
+        syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i ", common_data.volume_out_timeout);
+        
+        pthread_mutex_unlock(&lockProcess);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
+    if(compileVolumeCommand(volumeInternal) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockProcess);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
+    common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
+    syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
+        common_data.volume_level_status);
+    
     if(common_data.interface->send(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	pthread_mutex_unlock(&lockProcess);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    pthread_mutex_unlock(&lockProcess);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     return EXIT_SUCCESS;
 }
 
 static int replyVolumeCommand(long *volumeInternal) {
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockProcess);
-	
-	if(compileVolumeCommand(volumeInternal) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockProcess);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
-	syslog(LOG_DEBUG, "Replied current external volume level: %.2f", common_data.volume_level_status);
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockProcess);
+    
+    if(compileVolumeCommand(volumeInternal) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockProcess);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
+    syslog(LOG_DEBUG, "Replied current external volume level: %.2f", common_data.volume_level_status);
+    
     if(common_data.interface->reply(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	pthread_mutex_unlock(&lockProcess);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    pthread_mutex_unlock(&lockProcess);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     return EXIT_SUCCESS;
 }
 
 static int compileVolumeCommand(long *volumeInternal) {
-	
-	if(*volumeInternal < 0 || *volumeInternal > 100) {
-		syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %ld", *volumeInternal);
-		
-		return EXIT_FAILURE;
-	}
-	
-	if(common_data.discrete_volume) {
-		double volumeExternal;
-		common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
-		*dechex_data.event_header[0] = dechex_data.volume_header[0];
-		*dechex_data.event[0] = (int)volumeExternal;
-		
-		common_data.volume_level_status = volumeExternal;
-	}
-	else {
-		if(common_data.volume_level_status == *volumeInternal) // to catch a reset of the volume level
-			return EXIT_FAILURE;
-		
-		*dechex_data.event_header[0] = dechex_data.volume_header[0];
-		if(*volumeInternal > common_data.volume_level_status)
-			*dechex_data.event[0] = dechex_data.volumeMutationPositive;
-		else
-			*dechex_data.event[0] = dechex_data.volumeMutationNegative;
-		
-		if(*volumeInternal < 25 || *volumeInternal > 75) {
-			if((setMixer((common_data.alsa_volume_range/2)+common_data.alsa_volume_min)) == EXIT_FAILURE)
-				return EXIT_FAILURE;
-			
-			syslog(LOG_DEBUG, "Mixer volume level: %ld", *volumeInternal);
-			*volumeInternal = 50;
-			common_data.volume_out_timeout = 1; // really necessary? 
-		}
-		
-		common_data.volume_level_status = *volumeInternal;
-	}
-	
-	return EXIT_SUCCESS;
+    
+    if(*volumeInternal < 0 || *volumeInternal > 100) {
+        syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %ld", *volumeInternal);
+        
+        return EXIT_FAILURE;
+    }
+    
+    if(common_data.discrete_volume) {
+        double volumeExternal;
+        common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
+        *dechex_data.event_header[0] = dechex_data.volume_header[0];
+        *dechex_data.event[0] = (int)volumeExternal;
+        
+        common_data.volume_level_status = volumeExternal;
+    }
+    else {
+        if(common_data.volume_level_status == *volumeInternal) // to catch a reset of the volume level
+            return EXIT_FAILURE;
+        
+        *dechex_data.event_header[0] = dechex_data.volume_header[0];
+        if(*volumeInternal > common_data.volume_level_status)
+            *dechex_data.event[0] = dechex_data.volumeMutationPositive;
+        else
+            *dechex_data.event[0] = dechex_data.volumeMutationNegative;
+        
+        if(*volumeInternal < 25 || *volumeInternal > 75) {
+            if((setMixer((common_data.alsa_volume_range/2)+common_data.alsa_volume_min)) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+            
+            syslog(LOG_DEBUG, "Mixer volume level: %ld", *volumeInternal);
+            *volumeInternal = 50;
+            common_data.volume_out_timeout = 1; // really necessary? 
+        }
+        
+        common_data.volume_level_status = *volumeInternal;
+    }
+    
+    return EXIT_SUCCESS;
 }
 
 static int sendDeviceCommand(char *category, char *action) {
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockConfig);
-	
-	if(compileDeviceCommand(category, action) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockConfig);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockConfig);
+    
+    if(compileDeviceCommand(category, action) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockConfig);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
     if(common_data.interface->send(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
         return EXIT_FAILURE;
-	
-	pthread_mutex_unlock(&lockConfig);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+    pthread_mutex_unlock(&lockConfig);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     
     return EXIT_SUCCESS;
 }
 
 static int replyDeviceCommand(char *category, char *action) {
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockConfig);
-	
-	if(compileDeviceCommand(category, action) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockConfig);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockConfig);
+    
+    if(compileDeviceCommand(category, action) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockConfig);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
     if(common_data.interface->reply(dechex_data.serial_command[0], dechex_data.serial_command_length[0]) == EXIT_FAILURE)
         return EXIT_FAILURE;
-	
-	pthread_mutex_unlock(&lockConfig);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+    pthread_mutex_unlock(&lockConfig);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     
     return EXIT_SUCCESS;
 }
 
 static int compileDeviceCommand(char *category, char *action) {
-	char config_query[CONFIG_QUERY_SIZE];
-	int command;
-	
-	snprintf(config_query, CONFIG_QUERY_SIZE, "%s.%s.[0]", category, (char *)action);
-	
-	if(!config_lookup_int(&config, config_query, &command)) {
-		
-		syslog(LOG_WARNING, "Could not identify command: %s", (char *)action);
-		return EXIT_FAILURE;
-	}
-	if(command < 0 || command > 255) {
-		
-		syslog(LOG_WARNING, "Value for command \"%s\" is not valid: %i", (char *)action, command);
-		return EXIT_FAILURE;
-	}
-	*dechex_data.event[0] = command;
-	
-	snprintf(config_query, CONFIG_QUERY_SIZE, "%s.header.[0]", category);
-	if(!config_lookup_int(&config, config_query, &command)) {
-		
-		syslog(LOG_WARNING, "Could not find header for message: %s", category);
-		return EXIT_FAILURE;
-	}
-	
-	if(command < 0 || command > 255) {
-		syslog(LOG_WARNING, "Value for header \"%s\" is not valid: %i", category, command);
-		return EXIT_FAILURE;
-	}
-	*dechex_data.event_header[0] = command;
+    char config_query[CONFIG_QUERY_SIZE];
+    int command;
+    
+    snprintf(config_query, CONFIG_QUERY_SIZE, "%s.%s.[0]", category, (char *)action);
+    
+    if(!config_lookup_int(&config, config_query, &command)) {
+        
+        syslog(LOG_WARNING, "Could not identify command: %s", (char *)action);
+        return EXIT_FAILURE;
+    }
+    if(command < 0 || command > 255) {
+        
+        syslog(LOG_WARNING, "Value for command \"%s\" is not valid: %i", (char *)action, command);
+        return EXIT_FAILURE;
+    }
+    *dechex_data.event[0] = command;
+    
+    snprintf(config_query, CONFIG_QUERY_SIZE, "%s.header.[0]", category);
+    if(!config_lookup_int(&config, config_query, &command)) {
+        
+        syslog(LOG_WARNING, "Could not find header for message: %s", category);
+        return EXIT_FAILURE;
+    }
+    
+    if(command < 0 || command > 255) {
+        syslog(LOG_WARNING, "Value for header \"%s\" is not valid: %i", category, command);
+        return EXIT_FAILURE;
+    }
+    *dechex_data.event_header[0] = command;
     
     return EXIT_SUCCESS;
 } /* end serial_send_dechex */
@@ -380,7 +380,7 @@ static int processCommand(int *category_lookup, int *action_lookup) {
             write(status_file, current_event, strlen(current_event));
             close(status_file);
             
-			statusInfo.update(current_header, current_event);
+            statusInfo.update(current_header, current_event);
             syslog(LOG_DEBUG, "Status updated event (header): %s (%s)", current_event, current_header);
             break;
         }
@@ -397,8 +397,8 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
     int count = 0;
     int completed = 0;
     int messageIndexDfl = dechex_data.event_header[common_data.diff_commands] == dechex_data.event[common_data.diff_commands] ? 
-		!dechex_data.header_length[common_data.diff_commands]*2 : !dechex_data.header_length[common_data.diff_commands];
-	int alwaysVolume = dechex_data.event_header[common_data.diff_commands] == dechex_data.event[common_data.diff_commands] ? 1 : 0;
+        !dechex_data.header_length[common_data.diff_commands]*2 : !dechex_data.header_length[common_data.diff_commands];
+    int alwaysVolume = dechex_data.event_header[common_data.diff_commands] == dechex_data.event[common_data.diff_commands] ? 1 : 0;
     static int header_count = 0;
     static int message_index = 0;
     static int message_category = 0;
@@ -409,8 +409,8 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
         message_index = messageIndexDfl;
     
     for(count = 0; count < bytes_read; count++) {
-    	// if only volume, immediately send to volume process.
-    	
+        // if only volume, immediately send to volume process.
+        
         if((int)device_status_message[count] == dechex_data.serial_command[common_data.diff_commands][header_count] && 
         dechex_data.header_length[common_data.diff_commands] != 0) {
             header_count++;
@@ -431,7 +431,7 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
             case 2:
                 message_action = (int)device_status_message[count];
                 if(dechex_data.command_tail[common_data.diff_commands] == NULL)
-                	completed = 1;
+                    completed = 1;
                 message_index = 3;
                 break;
             case 3:
@@ -443,29 +443,29 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
                 continue;
         } /* end switch */
         
-		if(completed) {
+        if(completed) {
         
-			syslog(LOG_DEBUG, "Detected incoming event (header): %i (%i)", message_action, message_category);
-			
-			if(message_category == dechex_data.volume_header[common_data.diff_commands] || alwaysVolume) {
-				volume_level = (double)message_action;
-				status = common_data.volume->process(&volume_level);
-			}
-			else
-				status = processCommand(&message_category, &message_action);
-			
-			if(status == EXIT_FAILURE) {
-				pthread_kill(mainThread, SIGTERM);
-				pause();
-			}
+            syslog(LOG_DEBUG, "Detected incoming event (header): %i (%i)", message_action, message_category);
+            
+            if(message_category == dechex_data.volume_header[common_data.diff_commands] || alwaysVolume) {
+                volume_level = (double)message_action;
+                status = common_data.volume->process(&volume_level);
+            }
+            else
+                status = processCommand(&message_category, &message_action);
+            
+            if(status == EXIT_FAILURE) {
+                pthread_kill(mainThread, SIGTERM);
+                pause();
+            }
 
-			message_index = messageIndexDfl;
+            message_index = messageIndexDfl;
 
-			completed = 0;
-		}
-		else if(dechex_data.command_tail[common_data.diff_commands] && 
-		(int)device_status_message[count] == *dechex_data.command_tail[common_data.diff_commands])
-			message_index = messageIndexDfl;
+            completed = 0;
+        }
+        else if(dechex_data.command_tail[common_data.diff_commands] && 
+        (int)device_status_message[count] == *dechex_data.command_tail[common_data.diff_commands])
+            message_index = messageIndexDfl;
     }
     return EXIT_SUCCESS; // due to the static vars it will remember data between runs...
 } /* serial_strip_dechex */
@@ -477,5 +477,4 @@ static void deinit(void) {
         free(dechex_data.serial_command[1]);
     if(dechex_data.statusQuery != NULL)
         free(dechex_data.statusQuery);
-        
 }

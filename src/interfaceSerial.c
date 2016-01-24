@@ -62,7 +62,7 @@ static void help(void) {
 
 static int init(void) {
     /* Serial device settings */
-	struct termios termiosNewAttr;
+    struct termios termiosNewAttr;
     const char *serialDevice;
     speed_t serialSpeed;
     tcflag_t serialBits;
@@ -71,7 +71,7 @@ static int init(void) {
     if(validateConfigString(&config, "serial_port", &serialDevice, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	interfaceFD = open(serialDevice, O_RDWR| O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
+    interfaceFD = open(serialDevice, O_RDWR| O_NOCTTY | O_NONBLOCK | O_CLOEXEC);
     if(interfaceFD < 0) {
         syslog(LOG_ERR, "Failed to open serial device %s: %s (%i)", serialDevice, strerror(errno), errno);
         return EXIT_FAILURE;
@@ -220,8 +220,8 @@ static int send(const void *message, size_t messageLength) {
     }
     
     pthread_mutex_unlock(&interfaceLock);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     return EXIT_SUCCESS;
 } /* end send */
 
@@ -245,9 +245,9 @@ static void *listen(void *arg) {
     while(1) {
         interfaceRxPtr = interfaceRxBuffer;
         if(leftovers >= (SERIAL_READ_BUFFER/2))
-			leftovers = 0; // crossed threshold, bogus input? reset leftovers
-		interfaceRxPtr += leftovers;
-			
+            leftovers = 0; // crossed threshold, bogus input? reset leftovers
+        interfaceRxPtr += leftovers;
+            
         /* !!!! pthread cancellation point !!!! */
         status = poll(pollFD, 1, -1);
         if(status < 0) {
@@ -277,7 +277,7 @@ static int deinit(void) {
     if(interfaceFD > 0) {
         tcsetattr(interfaceFD, TCSANOW, &termiosOriginalAttr);
         close(interfaceFD);
-	}
+    }
     pthread_mutex_destroy(&interfaceLock);
     
     return EXIT_SUCCESS;

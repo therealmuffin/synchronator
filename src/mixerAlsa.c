@@ -84,7 +84,7 @@ int initMixer(void) {
     syslog(LOG_DEBUG, "Alsa volume range, min, max: %i, %i, %i", common_data.alsa_volume_range, 
         common_data.alsa_volume_min, common_data.alsa_volume_max);
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 int getMixer(long *volume) {
@@ -101,16 +101,16 @@ int getMixer(long *volume) {
 
     common_data.volume->convertMixer2Internal(volume);
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 int setMixer(int volume) {
-	if((snd_mixer_selem_set_playback_volume_all(snd_elem, volume)) != 0) {
+    if((snd_mixer_selem_set_playback_volume_all(snd_elem, volume)) != 0) {
         syslog(LOG_WARNING, "Setting mixer failed");
-		return EXIT_FAILURE;
-	}
+        return EXIT_FAILURE;
+    }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 void *watchMixer(void *arg) {

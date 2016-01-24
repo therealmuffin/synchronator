@@ -75,230 +75,229 @@ static void help(void) {
 }
 
 static int init(void) {
-	int count;
+    int count;
     int main_count;
     int int_setting = -1;
     ascii_data.volume_precision = 0;
-	ascii_data.allowRequests = 0;
+    ascii_data.allowRequests = 0;
     
-	for(main_count = 0; main_count <= common_data.diff_commands; main_count++)
-	{
-		if(validateConfigString(&config, "header", &ascii_data.command_header[main_count], main_count) == EXIT_FAILURE)
-			return EXIT_FAILURE;
-		ascii_data.header_length[main_count] = strlen(ascii_data.command_header[main_count]);
-		if(validateConfigString(&config, "tail", &ascii_data.command_tail[main_count], main_count) == EXIT_FAILURE)
-			return EXIT_FAILURE;
-			
-		if((ascii_data.tail_length[main_count] = strlen(ascii_data.command_tail[main_count])) < 1) {
-			syslog(LOG_ERR, "[Error] Setting 'tail' can not be empty");
-			return EXIT_FAILURE;
-		}
-		if(validateConfigString(&config, "event_delimiter", &ascii_data.event_delimiter[main_count], main_count) == EXIT_FAILURE)
-			return EXIT_FAILURE;
-		ascii_data.event_delimiter_length[main_count] = strlen(ascii_data.event_delimiter[main_count]);
-		if(validateConfigString(&config, "volume.header", &ascii_data.volume_header[main_count], main_count) == EXIT_FAILURE)
-			return EXIT_FAILURE;
-		if(validateConfigString(&config, "volume.tail", &ascii_data.volume_tail[main_count], main_count) == EXIT_FAILURE)
-			return EXIT_FAILURE;
-	}
-	if(common_data.discrete_volume && validateConfigInt(&config, "volume.precision", &ascii_data.volume_precision, -1, 0, 10, 0) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-	if(common_data.discrete_volume && validateConfigInt(&config, "volume.length", &ascii_data.volume_length, -1, 0, 10, 0) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-	if(common_data.discrete_volume && ascii_data.volume_precision) ascii_data.volume_length += ascii_data.volume_precision+1;
-	if(!common_data.discrete_volume && validateConfigString(&config, "volume.min", &ascii_data.volumeMutationNegative, -1) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-	if(!common_data.discrete_volume && validateConfigString(&config, "volume.plus", &ascii_data.volumeMutationPositive, -1) == EXIT_FAILURE)
-		return EXIT_FAILURE;
-	if(common_data.send_query && validateConfigString(&config, "query.trigger.[0]", &common_data.statusQuery, -1) == EXIT_FAILURE)
-		return EXIT_FAILURE;
+    for(main_count = 0; main_count <= common_data.diff_commands; main_count++)
+    {
+        if(validateConfigString(&config, "header", &ascii_data.command_header[main_count], main_count) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        ascii_data.header_length[main_count] = strlen(ascii_data.command_header[main_count]);
+        if(validateConfigString(&config, "tail", &ascii_data.command_tail[main_count], main_count) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+            
+        if((ascii_data.tail_length[main_count] = strlen(ascii_data.command_tail[main_count])) < 1) {
+            syslog(LOG_ERR, "[Error] Setting 'tail' can not be empty");
+            return EXIT_FAILURE;
+        }
+        if(validateConfigString(&config, "event_delimiter", &ascii_data.event_delimiter[main_count], main_count) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        ascii_data.event_delimiter_length[main_count] = strlen(ascii_data.event_delimiter[main_count]);
+        if(validateConfigString(&config, "volume.header", &ascii_data.volume_header[main_count], main_count) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        if(validateConfigString(&config, "volume.tail", &ascii_data.volume_tail[main_count], main_count) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+    }
+    if(common_data.discrete_volume && validateConfigInt(&config, "volume.precision", &ascii_data.volume_precision, -1, 0, 10, 0) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    if(common_data.discrete_volume && validateConfigInt(&config, "volume.length", &ascii_data.volume_length, -1, 0, 10, 0) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    if(common_data.discrete_volume && ascii_data.volume_precision) ascii_data.volume_length += ascii_data.volume_precision+1;
+    if(!common_data.discrete_volume && validateConfigString(&config, "volume.min", &ascii_data.volumeMutationNegative, -1) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    if(!common_data.discrete_volume && validateConfigString(&config, "volume.plus", &ascii_data.volumeMutationPositive, -1) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    if(common_data.send_query && validateConfigString(&config, "query.trigger.[0]", &common_data.statusQuery, -1) == EXIT_FAILURE)
+        return EXIT_FAILURE;
         if(common_data.send_query) common_data.statusQueryLength = strlen(common_data.statusQuery);
 
-	if(config_lookup_string(&config, "response.indicator", &ascii_data.requestIndicator)) {
-		ascii_data.allowRequests = 1;
+    if(config_lookup_string(&config, "response.indicator", &ascii_data.requestIndicator)) {
+        ascii_data.allowRequests = 1;
         syslog(LOG_INFO, "[OK] response.indicator: %s", ascii_data.requestIndicator);
-	}
-        
-	
+    }
+    
     return EXIT_SUCCESS;
 } /* end init() */
 
 static int sendVolumeCommand(long *volumeInternal) {
-	char serial_command[200];
-	
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockProcess);
+    char serial_command[200];
     
-	if(common_data.volume_out_timeout > 0) {
-		common_data.volume_out_timeout--;
-		
-		syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i", common_data.volume_out_timeout);
-		
-		pthread_mutex_unlock(&lockProcess);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
-	if(compileVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockProcess);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockProcess);
     
-	common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
-	syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
-		common_data.volume_level_status);
-	
+    if(common_data.volume_out_timeout > 0) {
+        common_data.volume_out_timeout--;
+        
+        syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i", common_data.volume_out_timeout);
+        
+        pthread_mutex_unlock(&lockProcess);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
+    if(compileVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockProcess);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
+    common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
+    syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
+        common_data.volume_level_status);
+    
     pthread_mutex_unlock(&lockProcess);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     if(common_data.interface->send(serial_command, strlen(serial_command)) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 static int replyVolumeCommand(long *volumeInternal) {
-	char serial_command[200];
-	
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockProcess);
-	
-	if(compileVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockProcess);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		
-		return EXIT_SUCCESS;
-	}
-	
-	syslog(LOG_DEBUG, "Replied current external volume level: %.2f", common_data.volume_level_status);
-	
+    char serial_command[200];
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockProcess);
+    
+    if(compileVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockProcess);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        
+        return EXIT_SUCCESS;
+    }
+    
+    syslog(LOG_DEBUG, "Replied current external volume level: %.2f", common_data.volume_level_status);
+    
     pthread_mutex_unlock(&lockProcess);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     if(common_data.interface->reply(serial_command, strlen(serial_command)) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 static int compileVolumeCommand(long *volumeInternal, char serial_command[200]) {
-	
-	if(*volumeInternal < 0 || *volumeInternal > 100) {
-		syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %ld", *volumeInternal);
-		
-		return EXIT_FAILURE;
-	}
-	
-	if(common_data.discrete_volume) {
-		double volumeExternal;
-		common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
-		snprintf(serial_command, 200, "%s%s%s%0*.*f%s%s", 
-			ascii_data.command_header[0], ascii_data.volume_header[0], 
-			ascii_data.event_delimiter[0], ascii_data.volume_length, 
-			ascii_data.volume_precision, volumeExternal, ascii_data.volume_tail[0], 
-			ascii_data.command_tail[0]);
-			
-		common_data.volume_level_status = volumeExternal;
-	}
-	else {
-		if(common_data.volume_level_status == *volumeInternal)
-			return EXIT_FAILURE;
-		
-		const char* volumeMutation;
-		
-		if(*volumeInternal > common_data.volume_level_status)
-			volumeMutation = ascii_data.volumeMutationPositive;
-		else
-			volumeMutation = ascii_data.volumeMutationNegative;
-		
-		snprintf(serial_command, 200, "%s%s%s%s%s%s", 
-			ascii_data.command_header[0], ascii_data.volume_header[0], 
-			ascii_data.event_delimiter[0], volumeMutation, 
-			ascii_data.volume_tail[0], ascii_data.command_tail[0]);
-		
-		if(*volumeInternal < 25 || *volumeInternal > 75) {
-			int status = -1;
-			if((setMixer((common_data.alsa_volume_range/2)+common_data.alsa_volume_min)) == EXIT_FAILURE)
-				return EXIT_FAILURE;
-			
-			syslog(LOG_INFO, "Mixer volume level: %ld", *volumeInternal);
-			*volumeInternal = 50;
-			common_data.volume_out_timeout = 1;
-		}
-		
-		common_data.volume_level_status = *volumeInternal;
-	}
-	
-	return EXIT_SUCCESS;
+    
+    if(*volumeInternal < 0 || *volumeInternal > 100) {
+        syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %ld", *volumeInternal);
+        
+        return EXIT_FAILURE;
+    }
+    
+    if(common_data.discrete_volume) {
+        double volumeExternal;
+        common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
+        snprintf(serial_command, 200, "%s%s%s%0*.*f%s%s", 
+            ascii_data.command_header[0], ascii_data.volume_header[0], 
+            ascii_data.event_delimiter[0], ascii_data.volume_length, 
+            ascii_data.volume_precision, volumeExternal, ascii_data.volume_tail[0], 
+            ascii_data.command_tail[0]);
+            
+        common_data.volume_level_status = volumeExternal;
+    }
+    else {
+        if(common_data.volume_level_status == *volumeInternal)
+            return EXIT_FAILURE;
+        
+        const char* volumeMutation;
+        
+        if(*volumeInternal > common_data.volume_level_status)
+            volumeMutation = ascii_data.volumeMutationPositive;
+        else
+            volumeMutation = ascii_data.volumeMutationNegative;
+        
+        snprintf(serial_command, 200, "%s%s%s%s%s%s", 
+            ascii_data.command_header[0], ascii_data.volume_header[0], 
+            ascii_data.event_delimiter[0], volumeMutation, 
+            ascii_data.volume_tail[0], ascii_data.command_tail[0]);
+        
+        if(*volumeInternal < 25 || *volumeInternal > 75) {
+            int status = -1;
+            if((setMixer((common_data.alsa_volume_range/2)+common_data.alsa_volume_min)) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+            
+            syslog(LOG_INFO, "Mixer volume level: %ld", *volumeInternal);
+            *volumeInternal = 50;
+            common_data.volume_out_timeout = 1;
+        }
+        
+        common_data.volume_level_status = *volumeInternal;
+    }
+    
+    return EXIT_SUCCESS;
 }
 
 static int sendDeviceCommand(char *category, char *action) {
-	char serial_command[200];
-	
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockConfig);
-	
-	if(compileDeviceCommand(category, action, serial_command) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockConfig);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
-		return EXIT_SUCCESS;
-	}
-	
-	pthread_mutex_unlock(&lockConfig);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    char serial_command[200];
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockConfig);
+    
+    if(compileDeviceCommand(category, action, serial_command) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockConfig);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+        return EXIT_SUCCESS;
+    }
+    
+    pthread_mutex_unlock(&lockConfig);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     if(common_data.interface->send(serial_command, strlen(serial_command)) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 static int replyDeviceCommand(char *category, char *action) {
-	char serial_command[200];
-	
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_mutex_lock(&lockConfig);
-	
-	if(compileDeviceCommand(category, action, serial_command) == EXIT_FAILURE) {
-		pthread_mutex_unlock(&lockConfig);
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
-		return EXIT_SUCCESS;
-	}
-	
-	pthread_mutex_unlock(&lockConfig);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    char serial_command[200];
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockConfig);
+    
+    if(compileDeviceCommand(category, action, serial_command) == EXIT_FAILURE) {
+        pthread_mutex_unlock(&lockConfig);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+        return EXIT_SUCCESS;
+    }
+    
+    pthread_mutex_unlock(&lockConfig);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
     if(common_data.interface->reply(serial_command, strlen(serial_command)) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 static int compileDeviceCommand(char *category, char *action, char serial_command[200]) {
-	char config_query[CONFIG_QUERY_SIZE];
-	const char *command_category, *command_action;
+    char config_query[CONFIG_QUERY_SIZE];
+    const char *command_category, *command_action;
         
-	snprintf(config_query, CONFIG_QUERY_SIZE, "%s.%s.[0]", category, (char *)action);
-	
-	if(!config_lookup_string(&config, config_query, &command_action)) {
-		syslog(LOG_WARNING, "Could not identify command: %s", (char *)action);
-		return EXIT_FAILURE;
-	}
-	
-	snprintf(config_query, CONFIG_QUERY_SIZE, "%s.header.[0]", category);
-	if(!config_lookup_string(&config, config_query, &command_category)) {
-		syslog(LOG_WARNING, "Could not find header for message: %s", category);
-		return EXIT_FAILURE;
-	}
-	
-	snprintf(serial_command, 200, "%s%s%s%s%s", 
-		ascii_data.command_header[0], command_category, 
-		ascii_data.event_delimiter[0], command_action, ascii_data.command_tail[0]);
+    snprintf(config_query, CONFIG_QUERY_SIZE, "%s.%s.[0]", category, (char *)action);
+    
+    if(!config_lookup_string(&config, config_query, &command_action)) {
+        syslog(LOG_WARNING, "Could not identify command: %s", (char *)action);
+        return EXIT_FAILURE;
+    }
+    
+    snprintf(config_query, CONFIG_QUERY_SIZE, "%s.header.[0]", category);
+    if(!config_lookup_string(&config, config_query, &command_category)) {
+        syslog(LOG_WARNING, "Could not find header for message: %s", category);
+        return EXIT_FAILURE;
+    }
+    
+    snprintf(serial_command, 200, "%s%s%s%s%s", 
+        ascii_data.command_header[0], command_category, 
+        ascii_data.event_delimiter[0], command_action, ascii_data.command_tail[0]);
     
     return EXIT_SUCCESS;
 } /* end serial_send_ascii */
@@ -357,7 +356,7 @@ static int processCommand(char *event_header, char *event) {
             write(status_file, current_event, strlen(current_event));
             close(status_file);
             
-			statusInfo.update(current_header, current_event);
+            statusInfo.update(current_header, current_event);
             syslog(LOG_DEBUG, "Status update event (header): %s (%s)", current_event, current_header);
             
             pthread_mutex_unlock(&lockConfig);
@@ -386,52 +385,52 @@ static int processRequest(char *request) {
     
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_mutex_lock(&lockConfig);
-	
-	responseConfig = config_lookup(&config, "response");
+    
+    responseConfig = config_lookup(&config, "response");
     responseTotal = config_setting_length(responseConfig);
     
     for(count = 0; count < responseTotal; count++) {
         responseCurrent = config_setting_get_elem(responseConfig, count);
         if((responseValue = config_setting_get_string_elem(responseCurrent, 1)) != NULL &&
         strcmp(responseValue, request) == 0) {
-			responseValue = config_setting_get_string_elem(responseCurrent, 2);
-        	if(config_setting_get_bool_elem(responseCurrent, 0) == 1) { // formulating default response
-        	
-				pthread_mutex_unlock(&lockConfig);
-				pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-				
-        		common_data.interface->reply(responseValue, strlen(responseValue));
-        	}
-        	else { // attempt to formulate custom response
-				requestName = config_setting_name(responseCurrent);
-				
-				pthread_mutex_unlock(&lockConfig);
-				pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-				
-				if(strcmp(requestName, "volume") == 0) {
-					if(getMixer(&volume) == EXIT_FAILURE) {
-						return EXIT_FAILURE;
-					}
-					replyVolumeCommand(&volume);
-				}
-				else {
-					statusInfo.retrieve(requestName, &requestValue);
-					if(requestValue != NULL)
-						replyDeviceCommand((char *)requestName, (char *)requestValue);
-					else // custom response not possible, reverting to default value
-						replyDeviceCommand((char *)requestName, (char *)responseValue);
-				}
-        	}
-			syslog(LOG_DEBUG, "Successfully processed request: %s", request);
-        	return EXIT_SUCCESS; // command is matched, returning
+            responseValue = config_setting_get_string_elem(responseCurrent, 2);
+            if(config_setting_get_bool_elem(responseCurrent, 0) == 1) { // formulating default response
+            
+                pthread_mutex_unlock(&lockConfig);
+                pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+                
+                common_data.interface->reply(responseValue, strlen(responseValue));
+            }
+            else { // attempt to formulate custom response
+                requestName = config_setting_name(responseCurrent);
+                
+                pthread_mutex_unlock(&lockConfig);
+                pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+                
+                if(strcmp(requestName, "volume") == 0) {
+                    if(getMixer(&volume) == EXIT_FAILURE) {
+                        return EXIT_FAILURE;
+                    }
+                    replyVolumeCommand(&volume);
+                }
+                else {
+                    statusInfo.retrieve(requestName, &requestValue);
+                    if(requestValue != NULL)
+                        replyDeviceCommand((char *)requestName, (char *)requestValue);
+                    else // custom response not possible, reverting to default value
+                        replyDeviceCommand((char *)requestName, (char *)responseValue);
+                }
+            }
+            syslog(LOG_DEBUG, "Successfully processed request: %s", request);
+            return EXIT_SUCCESS; // command is matched, returning
         }
         else {
-			pthread_mutex_unlock(&lockConfig);
-			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		}
+            pthread_mutex_unlock(&lockConfig);
+            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        }
     }
-	syslog(LOG_DEBUG, "Could not identify request: %s", request);
-	return EXIT_SUCCESS;
+    syslog(LOG_DEBUG, "Could not identify request: %s", request);
+    return EXIT_SUCCESS;
 }
 
 static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_read) {
@@ -456,8 +455,8 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
             break;
         
         message_cpy = tail_ptr+ascii_data.tail_length[common_data.diff_commands]; // either beginning new message or null character if end message
-		*tail_ptr = '\0';
-		
+        *tail_ptr = '\0';
+        
         strncpy(serial_command, header_ptr, tail_ptr+1-header_ptr);
         
         event_header_ptr = serial_command+ascii_data.header_length[common_data.diff_commands];
@@ -466,30 +465,30 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
             *event_delimiter_ptr = '\0';
         }
         else if(event_delimiter_ptr == event_header_ptr) { // if true assume needle is empty, assume no event header exists.. so volume only
-			event_ptr = event_header_ptr;
-			event_header_ptr = &serial_command[tail_ptr-header_ptr]; // is or will be NULL character
+            event_ptr = event_header_ptr;
+            event_header_ptr = &serial_command[tail_ptr-header_ptr]; // is or will be NULL character
         }
         else if(event_delimiter_ptr == NULL) { // delimiter not matched, incoming command not valid
-        	if(ascii_data.allowRequests && strstr(event_header_ptr, ascii_data.requestIndicator) > event_header_ptr)
-        		processRequest(event_header_ptr);
-        		
-        	/* check if we're still in the buffer, otherwise break loop */
-			if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
-				break;
-			continue;
+            if(ascii_data.allowRequests && strstr(event_header_ptr, ascii_data.requestIndicator) > event_header_ptr)
+                processRequest(event_header_ptr);
+                
+            /* check if we're still in the buffer, otherwise break loop */
+            if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
+                break;
+            continue;
         }
         else { // shouldn't have gotten here, skip to next message or break loop
-        	/* check if we're still in the buffer, otherwise break loop */
-			if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
-				break;
-			
-			continue;
+            /* check if we're still in the buffer, otherwise break loop */
+            if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
+                break;
+            
+            continue;
         }
         
         syslog(LOG_DEBUG, "Detected incoming event (header): %s (%s)", event_ptr, event_header_ptr);
                     
         if(strcmp(event_header_ptr, ascii_data.volume_header[common_data.diff_commands]) == 0) { // if the delimiter is empty, this will always match
-        	errno = 0;
+            errno = 0;
             volume_level = strtod(event_ptr, (char **)NULL); // segfault if not number? no, just with more than 1 byte send
             if(errno == 0)
                 status = common_data.volume->process(&volume_level);
@@ -513,5 +512,5 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
 } /* strip_raw_input */
 
 static void deinit(void) {
-	
+    
 }

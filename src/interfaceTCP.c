@@ -296,7 +296,7 @@ static int sendTCP(const void *message, size_t messageLength, int *address) {
     
     pthread_mutex_unlock(&interfaceLock);
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-	
+    
     return EXIT_SUCCESS;
 }
 
@@ -411,11 +411,11 @@ static void *listenTCP(void *arg) {
 } /* end listen */
 
 static int deinit(void) {
-	int countFD;
-	
-	freeaddrinfo(addrinfoResults); // free the linked-list
-	
-	for(countFD = 0; countFD <= maxFD; countFD++) {
+    int countFD;
+    
+    freeaddrinfo(addrinfoResults); // free the linked-list
+    
+    for(countFD = 0; countFD <= maxFD; countFD++) {
         if (FD_ISSET(countFD, &masterFDSet))
             close(countFD);
     }

@@ -35,13 +35,13 @@ extern interface_t interface_tcp;
 
 static interface_t *list_interfaces[] = {
 #ifndef DISABLE_SERIAL
-	&interface_serial,
+    &interface_serial,
 #endif
 #ifdef ENABLE_I2C
-	&interface_i2c,
+    &interface_i2c,
 #endif
 #ifdef ENABLE_TCP
-	&interface_tcp,
+    &interface_tcp,
 #endif
     NULL
 };

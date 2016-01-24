@@ -36,7 +36,7 @@
 #include "interfaces.h"
 #include "processData.h"
 #ifndef DISABLE_MSQ
-	#include "messageQueue.h"
+    #include "messageQueue.h"
 #endif
 
 /* This data has to be global so the can be accessed by the termination handler */
@@ -135,8 +135,8 @@ int main(int argc, char *argv[]) {
      * If a thread has been initialized, it changes the default value and the
      * termination handler knows whether to cancel it or not. */
     mainThread = statusQueryThread = watchMixerThread = interfaceListenThread = pthread_self();
-	common_data.process = NULL;
-	common_data.interface = NULL;
+    common_data.process = NULL;
+    common_data.interface = NULL;
     common_data.volume = NULL;
     
     struct sigaction signal_action;
@@ -145,8 +145,8 @@ int main(int argc, char *argv[]) {
     signal_action.sa_flags = 0;
     if(sigaction(SIGINT, &signal_action, NULL) < 0 || sigaction(SIGTERM, &signal_action, NULL) < 0) {
         syslog(LOG_ERR, "Failed to ignore signals: %s", strerror(errno));
-		closelog();
-		exit(EXIT_FAILURE);
+        closelog();
+        exit(EXIT_FAILURE);
     }
     
     /* Execute synchronatord function, if all goes well, it will never return */
@@ -174,7 +174,7 @@ int daemonize(void) {
     fd0 = open("/dev/null", O_RDWR);
     fd1 = fd2 = dup(0);
     
-	/* Setup syslog and give notice of execution */
+    /* Setup syslog and give notice of execution */
     openlog(PROGRAM_NAME, LOG_NDELAY | LOG_PID, LOG_DAEMON);
     syslog(LOG_NOTICE, "Program started by User %d", getuid());
     
@@ -231,7 +231,7 @@ int synchronatord(char *customConfigLocation) {
                 syslog(LOG_WARNING, "Configuration file was not found or is invalid: %s\n%s:%d - %s", 
                     configLocations[count], config_error_file(&config), config_error_line(&config), 
                     config_error_text(&config));
-				raise(SIGTERM);
+                raise(SIGTERM);
             }
         }
         else {
@@ -269,7 +269,7 @@ int synchronatord(char *customConfigLocation) {
     }
     
     if(common_data.sync_2way && (status = pthread_create(&interfaceListenThread, &thread_attr, 
-    								common_data.interface->listen, &thread_sigmask))) {
+                                    common_data.interface->listen, &thread_sigmask))) {
         pthread_attr_destroy(&thread_attr);
         syslog(LOG_ERR, "Failed to open interface listen thread: %i", status);
         raise(SIGTERM);
@@ -286,12 +286,12 @@ int synchronatord(char *customConfigLocation) {
     pthread_attr_destroy(&thread_attr);
     
     #ifndef DISABLE_MSQ
-		if(status = watchMsQ()) {
-			syslog(LOG_ERR, "Message queue failure: %i", status);
-			raise(SIGTERM);
-		}
+        if(status = watchMsQ()) {
+            syslog(LOG_ERR, "Message queue failure: %i", status);
+            raise(SIGTERM);
+        }
     #else
-		pause();
+        pause();
     #endif
     
     /* Shouldn't have gotten here */
@@ -303,11 +303,11 @@ int synchronatord(char *customConfigLocation) {
 int init(void) {
     int status;
     config_setting_t *conf_setting = NULL;
-	const char *conf_value = NULL;
+    const char *conf_value = NULL;
     
-	/* Now the configuration file is read, we don't need to know the location
-	 * of the application anymore. We'll change working directory to root */
-	if(chdir("/") < 0) {
+    /* Now the configuration file is read, we don't need to know the location
+     * of the application anymore. We'll change working directory to root */
+    if(chdir("/") < 0) {
         syslog(LOG_ERR, "Unable to change working directory to root: %s", strerror(errno));
         return EXIT_FAILURE;
     }
@@ -330,61 +330,61 @@ int init(void) {
         return EXIT_FAILURE;
     
     /* Set volume (curve) functions */
-	conf_value = NULL;
-	config_lookup_string(&config, "volume.curve", &conf_value);
+    conf_value = NULL;
+    config_lookup_string(&config, "volume.curve", &conf_value);
     if(!(common_data.volume = getVolume(&conf_value))) {
-    	syslog(LOG_ERR, "[Error] Volume curve is not recognised: %s", conf_value);
+        syslog(LOG_ERR, "[Error] Volume curve is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }
     else {
-    	syslog(LOG_INFO, "[OK] volume.curve: %s", conf_value);
+        syslog(LOG_INFO, "[OK] volume.curve: %s", conf_value);
     }
     /* initialise volume variables */
     if(common_data.volume->init() == EXIT_FAILURE)
-    	return EXIT_FAILURE;
+        return EXIT_FAILURE;
     
     /* Set and initialise process type */
-	conf_value = NULL;
-	config_lookup_string(&config, "data_type", &conf_value);
+    conf_value = NULL;
+    config_lookup_string(&config, "data_type", &conf_value);
     if(!(common_data.process = getProcessMethod(conf_value))) {
-    	syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", conf_value);
+        syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }
     else {
-    	syslog(LOG_INFO, "[OK] data_type: %s", conf_value);
+        syslog(LOG_INFO, "[OK] data_type: %s", conf_value);
     }
     if(common_data.process->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
     
     /* Set and initialise communication interface */
     conf_value = NULL;
-	config_lookup_string(&config, "interface", &conf_value);
+    config_lookup_string(&config, "interface", &conf_value);
     if(!(common_data.interface = getInterface(conf_value))) {
-    	syslog(LOG_ERR, "[Error] Setting 'interface' is not recognised: %s", conf_value);
+        syslog(LOG_ERR, "[Error] Setting 'interface' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }
     else {
-    	syslog(LOG_INFO, "[OK] interface: %s", conf_value);
+        syslog(LOG_INFO, "[OK] interface: %s", conf_value);
     }
     if(common_data.interface->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
         
     /* initialise mixer device */
     if(initMixer() == EXIT_FAILURE)
-    	return EXIT_FAILURE;
+        return EXIT_FAILURE;
 
-	/* init multipliers */
-	common_data.volume->regenerateMultipliers();
+    /* init multipliers */
+    common_data.volume->regenerateMultipliers();
 
 #ifndef DISABLE_MSQ
-	/* initialise message queue */
-	if(initMsQ() == EXIT_FAILURE)
-		return EXIT_FAILURE;
+    /* initialise message queue */
+    if(initMsQ() == EXIT_FAILURE)
+        return EXIT_FAILURE;
 #endif
     
     if((status = pthread_mutex_init(&lockConfig, NULL)) != 0) {
         syslog(LOG_ERR, "Failed to create config mutex: %i", status);
-    	return EXIT_FAILURE;
+        return EXIT_FAILURE;
     }
     
     return EXIT_SUCCESS;
@@ -415,7 +415,7 @@ void *queryStatus(void *arg) {
 } /* queryStatus */
 
 /* Handles the termination process and frees if required */
-void terminate(int signum) {	
+void terminate(int signum) {    
     /* Check if pthread_t has been initialized from default value and is still alive,
      * if so, cancel and join it. */
     if(!pthread_equal(watchMixerThread, mainThread) && pthread_kill(watchMixerThread, 0) == 0) {
@@ -438,30 +438,30 @@ void terminate(int signum) {
     }
     
     if(common_data.interface)
-		common_data.interface->deinit();
-	if(common_data.process)
-		common_data.process->deinit();
-	
-	deinitMixer();
-	if(common_data.volume)
-		common_data.volume->deinit();
-	statusInfo.deinit();
+        common_data.interface->deinit();
+    if(common_data.process)
+        common_data.process->deinit();
+    
+    deinitMixer();
+    if(common_data.volume)
+        common_data.volume->deinit();
+    statusInfo.deinit();
     config_destroy(&config);
-	
+    
     pthread_mutex_destroy(&lockConfig);
     pthread_mutex_destroy(&lockProcess);
     
 #ifndef DISABLE_MSQ
     deinitMsQ();
 #endif
-	
-	if(lock_file > 0) {
-		lockf(lock_file, F_ULOCK, 0);
-		close(lock_file);
-		unlink(LOCKFILE);
-	}
+    
+    if(lock_file > 0) {
+        lockf(lock_file, F_ULOCK, 0);
+        close(lock_file);
+        unlink(LOCKFILE);
+    }
     
     syslog(LOG_NOTICE, "Program terminated: %s (%i)", strsignal(signum), signum);
     closelog();
-	exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 } /* end terminate */

@@ -63,28 +63,28 @@ static int init(void) {
 
     int status;
 
-	if(common_data.sync_2way) {
-		syslog(LOG_ERR, "Setting 'sync_2way' to FALSE, not implemented for I2C");
-		common_data.sync_2way = 0;
-	}
+    if(common_data.sync_2way) {
+        syslog(LOG_ERR, "Setting 'sync_2way' to FALSE, not implemented for I2C");
+        common_data.sync_2way = 0;
+    }
 
     if(validateConfigString(&config, "i2c_device", &i2cDevice, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	interfaceFD = open(i2cDevice, O_RDWR);
-	if (interfaceFD < 0) {
-		syslog(LOG_ERR, "Error opening device %s: %s (%i)\n", i2cDevice, strerror(errno), errno);
-		return EXIT_FAILURE;
-	}
-	
+    interfaceFD = open(i2cDevice, O_RDWR);
+    if (interfaceFD < 0) {
+        syslog(LOG_ERR, "Error opening device %s: %s (%i)\n", i2cDevice, strerror(errno), errno);
+        return EXIT_FAILURE;
+    }
+    
     if(validateConfigInt(&config, "i2c_address", &i2cAddress, -1, 0, 0, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-	if (ioctl(interfaceFD, I2C_SLAVE, i2cAddress) == -1) {
-		syslog(LOG_ERR, "input/output error at address %x: %s (%i)\n", i2cAddress, strerror(errno), errno);
-		return EXIT_FAILURE;
-	}
-	
+    if (ioctl(interfaceFD, I2C_SLAVE, i2cAddress) == -1) {
+        syslog(LOG_ERR, "input/output error at address %x: %s (%i)\n", i2cAddress, strerror(errno), errno);
+        return EXIT_FAILURE;
+    }
+    
     if((status = pthread_mutex_init(&interfaceLock, NULL)) != 0) {
         syslog(LOG_ERR, "Failed to create interface mutex: %i", status);
         return EXIT_FAILURE;
@@ -149,7 +149,7 @@ static int send(const void *message, size_t messageLength) {
             return EXIT_FAILURE;
         }
 #endif // #ifdef ENABLE_INTERFACE_RECOVERY
-	
+    
     }
     
     pthread_mutex_unlock(&interfaceLock);
@@ -160,8 +160,8 @@ static int send(const void *message, size_t messageLength) {
 
 static void *listen(void *arg) {
 /* function not implemented, perhaps if any use for it is found... */
-	syslog(LOG_WARNING, "Listening for changes in I2C is not implemented.");
-	
+    syslog(LOG_WARNING, "Listening for changes in I2C is not implemented.");
+    
     pthread_exit(EXIT_SUCCESS);   
 } /* listen() */
 
@@ -170,7 +170,7 @@ static int deinit(void) {
     /* Closing port */
     if(interfaceFD > 0) {
         close(interfaceFD);
-	}
+    }
     pthread_mutex_destroy(&interfaceLock);
     
     return EXIT_SUCCESS;

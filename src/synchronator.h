@@ -1,104 +1,104 @@
 #ifndef SYNCHRONATOR_H
-	#define SYNCHRONATOR_H
+    #define SYNCHRONATOR_H
 
-	#ifndef NULL
-		#define NULL (void *)0
-	#endif // #ifndef NULL
-	
-	#ifdef INCLUDE_CONFIG
-		#include "config.h"
-	#endif // #ifdef INCLUDE_CONFIG
-	
-	#ifdef INCLUDE_VERSION
-		#include "version.h"
-	#endif // #ifdef INCLUDE_VERSION
-	
-	#ifndef DISABLE_SERIAL
-		#define USAGE_SERIAL "	Serial interface\n"
-	#else
-		#define USAGE_SERIAL
-	#endif // #ifdef USAGE_SERIAL
-	
-	#ifdef ENABLE_I2C
-		#define USAGE_I2C "	I2C interface\n"
-	#else
-		#define USAGE_I2C
-	#endif // #ifdef ENABLE_I2C
-	
-	#ifdef ENABLE_TCP
-		#define USAGE_TCP "	TCP interface\n"
-	#else
-		#define USAGE_TCP
-	#endif // #ifdef ENABLE_TCP
-	
-	#ifndef DISABLE_MSQ
-		#define USAGE_MSQ "	Message Queue (basic local control)\n"
-	#else
-		#define USAGE_MSQ
-	#endif // #ifdef DISABLE_MSQ
+    #ifndef NULL
+        #define NULL (void *)0
+    #endif // #ifndef NULL
+    
+    #ifdef INCLUDE_CONFIG
+        #include "config.h"
+    #endif // #ifdef INCLUDE_CONFIG
+    
+    #ifdef INCLUDE_VERSION
+        #include "version.h"
+    #endif // #ifdef INCLUDE_VERSION
+    
+    #ifndef DISABLE_SERIAL
+        #define USAGE_SERIAL "  Serial interface\n"
+    #else
+        #define USAGE_SERIAL
+    #endif // #ifdef USAGE_SERIAL
+    
+    #ifdef ENABLE_I2C
+        #define USAGE_I2C " I2C interface\n"
+    #else
+        #define USAGE_I2C
+    #endif // #ifdef ENABLE_I2C
+    
+    #ifdef ENABLE_TCP
+        #define USAGE_TCP " TCP interface\n"
+    #else
+        #define USAGE_TCP
+    #endif // #ifdef ENABLE_TCP
+    
+    #ifndef DISABLE_MSQ
+        #define USAGE_MSQ " Message Queue (basic local control)\n"
+    #else
+        #define USAGE_MSQ
+    #endif // #ifdef DISABLE_MSQ
 
-	#ifndef PROGRAM_PREFIX
-		#define PROGRAM_PREFIX
-	#endif // #ifndef PROGRAM_PREFIX
+    #ifndef PROGRAM_PREFIX
+        #define PROGRAM_PREFIX
+    #endif // #ifndef PROGRAM_PREFIX
 
-	#ifndef PROGRAM_SUFFIX
-		#define PROGRAM_SUFFIX
-	#endif // #ifndef PROGRAM_SUFFIX
-	
-	#define PROGRAM_NAME PROGRAM_PREFIX "synchronator" PROGRAM_SUFFIX
-	#ifndef PROGRAM_VERSION
-		#define PROGRAM_VERSION "UNKOWN VERSION"
-	#endif // #ifndef PROGRAM_VERSION
-	#define PROGRAM_LEGAL \
-	"Copyright (C) 2013-2016 Muffinman\n" \
-	"This is free software; see the source for copying conditions. There is NO\n" \
-	"warranty; not even MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
+    #ifndef PROGRAM_SUFFIX
+        #define PROGRAM_SUFFIX
+    #endif // #ifndef PROGRAM_SUFFIX
+    
+    #define PROGRAM_NAME PROGRAM_PREFIX "synchronator" PROGRAM_SUFFIX
+    #ifndef PROGRAM_VERSION
+        #define PROGRAM_VERSION "UNKOWN VERSION"
+    #endif // #ifndef PROGRAM_VERSION
+    #define PROGRAM_LEGAL \
+    "Copyright (C) 2013-2016 Muffinman\n" \
+    "This is free software; see the source for copying conditions. There is NO\n" \
+    "warranty; not even MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 
-	#define CONFIG_LOCATION1 "../etc/" PROGRAM_NAME ".conf"
-	#define CONFIG_LOCATION2 "/etc/" PROGRAM_NAME ".conf"
+    #define CONFIG_LOCATION1 "../etc/" PROGRAM_NAME ".conf"
+    #define CONFIG_LOCATION2 "/etc/" PROGRAM_NAME ".conf"
 
-	#define TEXT_USAGE \
-	"[options...]\n" \
-	"	-V          print version information\n" \
-	"	-h          print this help message\n" \
-	"	-d          daemonize application\n" \
-	"	-v0         set level of verbose to a minimum\n" \
-	"	-v1         set level of verbose to include informational messages\n" \
-	"	-v2         set level of verbose to include debug messages\n" \
-	"	-i          specify path to a configuration file\n\n" \
-	"If no location for the configuration file is given, the application will look in:\n" \
-	"	primary     "CONFIG_LOCATION1"\n" \
-	"	secondary   "CONFIG_LOCATION2"\n" \
-	"\n" \
-	"Synchronator is compiled with support for:\n" USAGE_SERIAL USAGE_I2C USAGE_TCP USAGE_MSQ
+    #define TEXT_USAGE \
+    "[options...]\n" \
+    "   -V          print version information\n" \
+    "   -h          print this help message\n" \
+    "   -d          daemonize application\n" \
+    "   -v0         set level of verbose to a minimum\n" \
+    "   -v1         set level of verbose to include informational messages\n" \
+    "   -v2         set level of verbose to include debug messages\n" \
+    "   -i          specify path to a configuration file\n\n" \
+    "If no location for the configuration file is given, the application will look in:\n" \
+    "   primary     "CONFIG_LOCATION1"\n" \
+    "   secondary   "CONFIG_LOCATION2"\n" \
+    "\n" \
+    "Synchronator is compiled with support for:\n" USAGE_SERIAL USAGE_I2C USAGE_TCP USAGE_MSQ
 
-	#define CONFIG_QUERY_SIZE 100
-	#define SERIAL_READ_BUFFER 100
+    #define CONFIG_QUERY_SIZE 100
+    #define SERIAL_READ_BUFFER 100
 
-	/* msg variables */
-	#define FTOK_PATH "/tmp/"PROGRAM_NAME".msq"
-	#define FTOK_ID 'B'
-	#define MSQ_SIZE CONFIG_QUERY_SIZE/2
+    /* msg variables */
+    #define FTOK_PATH "/tmp/"PROGRAM_NAME".msq"
+    #define FTOK_ID 'B'
+    #define MSQ_SIZE CONFIG_QUERY_SIZE/2
 
-	#define LOCKFILE "/var/run/synchronator/"PROGRAM_NAME".pid"
-	#define LOCKMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
+    #define LOCKFILE "/var/run/synchronator/"PROGRAM_NAME".pid"
+    #define LOCKMODE (S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH)
 
-	/* Location for setting status files */
-	#define TEMPLOCATION "/tmp"
-	#define MAX_PATH_LENGTH 50
+    /* Location for setting status files */
+    #define TEMPLOCATION "/tmp"
+    #define MAX_PATH_LENGTH 50
 
-	/* Ignore X incoming commands after outgoing command and vice versa to prevent a loop */
-	#define DEFAULT_PROCESS_TIMEOUT_IN 20
-	#define DEFAULT_PROCESS_TIMEOUT_OUT 20
+    /* Ignore X incoming commands after outgoing command and vice versa to prevent a loop */
+    #define DEFAULT_PROCESS_TIMEOUT_IN 20
+    #define DEFAULT_PROCESS_TIMEOUT_OUT 20
 
-	#ifdef CUSTOM_PROCESS_TIMEOUT_RX
-		#undef DEFAULT_PROCESS_TIMEOUT_IN
-		#define DEFAULT_PROCESS_TIMEOUT_IN CUSTOM_PROCESS_TIMEOUT_RX
-	#endif // #ifdef CUSTOM_PROCESS_TIMEOUT_RX
+    #ifdef CUSTOM_PROCESS_TIMEOUT_RX
+        #undef DEFAULT_PROCESS_TIMEOUT_IN
+        #define DEFAULT_PROCESS_TIMEOUT_IN CUSTOM_PROCESS_TIMEOUT_RX
+    #endif // #ifdef CUSTOM_PROCESS_TIMEOUT_RX
 
-	#ifdef CUSTOM_PROCESS_TIMEOUT_TX
-		#undef DEFAULT_PROCESS_TIMEOUT_OUT
-		#define DEFAULT_PROCESS_TIMEOUT_OUT CUSTOM_PROCESS_TIMEOUT_TX
-	#endif // #ifdef CUSTOM_PROCESS_TIMEOUT_TX
+    #ifdef CUSTOM_PROCESS_TIMEOUT_TX
+        #undef DEFAULT_PROCESS_TIMEOUT_OUT
+        #define DEFAULT_PROCESS_TIMEOUT_OUT CUSTOM_PROCESS_TIMEOUT_TX
+    #endif // #ifdef CUSTOM_PROCESS_TIMEOUT_TX
 
 #endif

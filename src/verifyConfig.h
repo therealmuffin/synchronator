@@ -17,7 +17,7 @@
 								int *configSettingDestination, 
 								int position,       // -1 for no position (not an array)
 								int valueMin, 
-								int valueMax, 
+                                int valueMax, 
 								int valueDefault);  // -1 setting is required, -2 setting 
 								                    // is ignored (both return EXIT_FAILURE)
 								

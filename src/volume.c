@@ -36,12 +36,12 @@ extern volumeCurve_t volumeCurveLog;
 static int initVolume(void);
 static int processVolume(double *volumeExternal);
 static void deinitVolume(void);
-	
+    
 static volume_functions_t volume;
 
 static volumeCurve_t *listVolumeCurves[] = {
-	&volumeCurveLinear,
-	&volumeCurveLog,
+    &volumeCurveLinear,
+    &volumeCurveLog,
     NULL
 };
 
@@ -100,16 +100,16 @@ static int initVolume(void) {
     if(common_data.discrete_volume && validateConfigInt(&config, "volume.max", 
     &common_data.volume_max, -1, 0, 0, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
-	
+    
     if(common_data.discrete_volume) {
-    	validateConfigInt(&config, "volume.response.pre_offset", &common_data.responsePreOffset, -1, 0, 0, 0);
-    	validateConfigInt(&config, "volume.response.post_offset", &common_data.responsePostOffset, -1, 0, 0, 0);
-    	validateConfigDouble(&config, "volume.response.multiplier", &common_data.responseMultiplier, -1, 0, 0, 1);
-    	validateConfigBool(&config, "volume.response.invert_multiplier", &int_setting, 0);
-    	if(int_setting)
-    		common_data.responseMultiplier = 1/common_data.responseMultiplier;
-    	if(common_data.responsePreOffset || common_data.responsePostOffset || common_data.responseMultiplier != 1)
-    		common_data.responseDivergent = 1;
+        validateConfigInt(&config, "volume.response.pre_offset", &common_data.responsePreOffset, -1, 0, 0, 0);
+        validateConfigInt(&config, "volume.response.post_offset", &common_data.responsePostOffset, -1, 0, 0, 0);
+        validateConfigDouble(&config, "volume.response.multiplier", &common_data.responseMultiplier, -1, 0, 0, 1);
+        validateConfigBool(&config, "volume.response.invert_multiplier", &int_setting, 0);
+        if(int_setting)
+            common_data.responseMultiplier = 1/common_data.responseMultiplier;
+        if(common_data.responsePreOffset || common_data.responsePostOffset || common_data.responseMultiplier != 1)
+            common_data.responseDivergent = 1;
     }
         
     common_data.initial_volume_min = common_data.volume_min;
@@ -123,9 +123,9 @@ static int processVolume(double *volumeExternal) {
     if(common_data.alsa_volume_max == common_data.alsa_volume_min)
         return EXIT_SUCCESS;
     
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     if(pthread_mutex_trylock(&lockProcess) != 0) {
-    	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         syslog(LOG_DEBUG, "Skipping incoming volume command");
         return EXIT_SUCCESS;
     }
@@ -134,7 +134,7 @@ static int processVolume(double *volumeExternal) {
         common_data.volume_in_timeout--;
         
         pthread_mutex_unlock(&lockProcess);
-    	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
         syslog(LOG_DEBUG, "Incoming volume level processing timeout: %i", common_data.volume_in_timeout);
         return EXIT_SUCCESS;
@@ -144,8 +144,8 @@ static int processVolume(double *volumeExternal) {
      * eg cp800: (receiverVolume + 94) * 0.926 (according to control4 driver). */
      
     double volume_level = *volumeExternal;
-	if(common_data.responseDivergent)
-		volume_level = (volume_level + common_data.responsePreOffset) * common_data.responseMultiplier + common_data.responsePostOffset;
+    if(common_data.responseDivergent)
+        volume_level = (volume_level + common_data.responsePreOffset) * common_data.responseMultiplier + common_data.responsePostOffset;
     
     /* Adjust the volume ranges according to current amplifier volume level */
     if(volume_level > common_data.volume_max || common_data.volume_max != common_data.initial_volume_max 
@@ -172,12 +172,12 @@ static int processVolume(double *volumeExternal) {
         syslog(LOG_DEBUG, "Volume level lower range has been adjusted: %i -> %i",
         common_data.initial_volume_min, common_data.volume_min);
     }
-	else if((int)volume_level == (int)common_data.volume_level_status) {
+    else if((int)volume_level == (int)common_data.volume_level_status) {
         if(common_data.volume_out_timeout > 0)
             common_data.volume_out_timeout--;
             
         pthread_mutex_unlock(&lockProcess);
-       	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 
         return EXIT_SUCCESS;
     }
@@ -192,7 +192,7 @@ static int processVolume(double *volumeExternal) {
     syslog(LOG_DEBUG, "Volume level mutation (ext. initiated): ext. (int.): %.2f (%.2f)", common_data.volume_level_status, volume_level);
     
     pthread_mutex_unlock(&lockProcess);
-   	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     
     return EXIT_SUCCESS;
 } /* end processVolume */

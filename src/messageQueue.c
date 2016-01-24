@@ -62,7 +62,7 @@ int initMsQ(void) {
         return EXIT_FAILURE;
     }
     
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 int watchMsQ(void) {
@@ -114,7 +114,7 @@ int watchMsQ(void) {
                 raise(SIGTERM);
     } /* end infinite msq loop */
     
-	return EXIT_FAILURE;
+    return EXIT_FAILURE;
 } /* end listenMsq */
 
 void deinitMsQ(void) {
