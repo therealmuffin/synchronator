@@ -97,7 +97,7 @@ static int init(void) {
     
     if((int)common_data.responseMultiplier != common_data.responseMultiplier) {
         syslog(LOG_ERR, "[ERROR] Numeric does not 'float'! Setting 'volume.response.multiplier'" 
-        				" is not an integer: %.2f", common_data.responseMultiplier);
+                        " is not an integer: %.2f", common_data.responseMultiplier);
         return EXIT_FAILURE;
     }
     
