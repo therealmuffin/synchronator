@@ -33,15 +33,15 @@ static process_method_t *processMethods[] = {
     NULL
 };
 
-process_method_t *getProcessMethod(const char *name) {
+process_method_t *getProcessMethod(const char **name) {
     process_method_t **process_type;
 
     // default to first interface
-    if (!name)
-        return processMethods[0];
+    if (!*name)
+        *name = processMethods[0]->name;
 
     for (process_type=processMethods; *process_type; process_type++)
-        if (!strcasecmp(name, (*process_type)->name))
+        if (!strcasecmp(*name, (*process_type)->name))
             return *process_type;
 
     return NULL;

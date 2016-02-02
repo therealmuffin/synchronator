@@ -346,7 +346,7 @@ int init(void) {
     /* Set and initialise process type */
     conf_value = NULL;
     config_lookup_string(&config, "data_type", &conf_value);
-    if(!(common_data.process = getProcessMethod(conf_value))) {
+    if(!(common_data.process = getProcessMethod(&conf_value))) {
         syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }
@@ -359,7 +359,7 @@ int init(void) {
     /* Set and initialise communication interface */
     conf_value = NULL;
     config_lookup_string(&config, "interface", &conf_value);
-    if(!(common_data.interface = getInterface(conf_value))) {
+    if(!(common_data.interface = getInterface(&conf_value))) {
         syslog(LOG_ERR, "[Error] Setting 'interface' is not recognised: %s", conf_value);
         return EXIT_FAILURE;
     }

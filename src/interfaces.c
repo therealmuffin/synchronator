@@ -47,15 +47,15 @@ static interface_t *list_interfaces[] = {
 };
 
 
-interface_t *getInterface(const char *name) {
+interface_t *getInterface(const char **name) {
     interface_t **interface;
 
     // default to first interface
-    if (!name)
-        return list_interfaces[0];
+    if (!*name)
+        *name = list_interfaces[0]->name;
 
     for (interface=list_interfaces; *interface; interface++)
-        if (!strcasecmp(name, (*interface)->name))
+        if (!strcasecmp(*name, (*interface)->name))
             return *interface;
 
     return NULL;

@@ -17,7 +17,7 @@
     } interface_t;
 
 
-    interface_t *getInterface(const char *name);
+    interface_t *getInterface(const char **name);
 
 
 #endif

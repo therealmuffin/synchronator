@@ -13,7 +13,7 @@
     
     } process_method_t;
     
-    process_method_t *getProcessMethod(const char *name);
+    process_method_t *getProcessMethod(const char **name);
     
     /* Status info functions */
 
