@@ -1,8 +1,10 @@
 #ifndef COMMON_H
     #define COMMON_H
 
+    #include <time.h>
     #include <pthread.h>
     #include <libconfig.h>
+    #include "synchronator.h"
     #include "interfaces.h"
     #include "processData.h"
     #include "mixer.h"
@@ -31,9 +33,14 @@
         double responseMultiplier;
     
         /* Ignore X incoming commands after outgoing command and vice versa to prevent a loop */
+        
+#ifdef TIME_DEFINED_TIMEOUT
+        struct timespec timestampLastRX;
+        struct timespec timestampLastTX;
+#else
         int volume_out_timeout;
         int volume_in_timeout;
-    
+#endif
         int statusQueryLength, statusQueryInterval;
         const char *statusQuery;
     

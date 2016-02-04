@@ -24,6 +24,7 @@
 #include <sys/types.h> 
 #include <stdint.h> // declares uint8_t a.o.
 //#include <math.h>
+#include <time.h>
 #include <pthread.h>
 #include <signal.h>
 #include <errno.h>
@@ -32,8 +33,8 @@
 
 #include "synchronator.h"
 #include "common.h"
-#include "verifyConfig.h"
 #include "processData.h"
+#include "verifyConfig.h"
 
 
 typedef struct {
@@ -49,6 +50,9 @@ typedef struct {
 } dechex_data_t;
 
 static dechex_data_t dechex_data;
+#ifdef TIME_DEFINED_TIMEOUT
+    static struct timespec timestampCurrent;
+#endif // #ifdef TIME_DEFINED_TIMEOUT
 
 static void help(void);
 static int init(void);
@@ -156,12 +160,17 @@ static int init(void) {
 static int sendVolumeCommand(long *volumeInternal) {
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_mutex_lock(&lockProcess);
-    
+
+#ifdef TIME_DEFINED_TIMEOUT
+    int timeout;
+    clock_gettime(CLOCK_MONOTONIC , &timestampCurrent);
+    if((timeout = timestampCurrent.tv_sec - common_data.timestampLastRX.tv_sec) <= DEFAULT_PROCESS_TIMEOUT_OUT) {
+        syslog(LOG_DEBUG, "Outgoing volume level processing timeout (completed): %i/%i", timeout, DEFAULT_PROCESS_TIMEOUT_OUT);
+#else
     if(common_data.volume_out_timeout > 0) {
         common_data.volume_out_timeout--;
-        
         syslog(LOG_DEBUG, "Outgoing volume level processing timeout: %i ", common_data.volume_out_timeout);
-        
+#endif // #ifdef TIME_DEFINED_TIMEOUT
         pthread_mutex_unlock(&lockProcess);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
@@ -174,8 +183,12 @@ static int sendVolumeCommand(long *volumeInternal) {
         
         return EXIT_SUCCESS;
     }
-    
+
+#ifdef TIME_DEFINED_TIMEOUT 
+    clock_gettime(CLOCK_MONOTONIC, &common_data.timestampLastTX);
+#else
     common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
+#endif // #ifdef TIME_DEFINED_TIMEOUT
     syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
         common_data.volume_level_status);
     
@@ -242,7 +255,7 @@ static int compileVolumeCommand(long *volumeInternal) {
             
             syslog(LOG_DEBUG, "Mixer volume level: %ld", *volumeInternal);
             *volumeInternal = 50;
-            common_data.volume_out_timeout = 1; // really necessary? 
+            //common_data.volume_out_timeout = 1; // really necessary? 
         }
         
         common_data.volume_level_status = *volumeInternal;

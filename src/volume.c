@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <pthread.h>
 #include <syslog.h>
 #include <libconfig.h>
@@ -38,6 +39,9 @@ static int processVolume(double *volumeExternal);
 static void deinitVolume(void);
     
 static volume_functions_t volume;
+#ifdef TIME_DEFINED_TIMEOUT
+    static struct timespec timestampCurrent;
+#endif // #ifdef TIME_DEFINED_TIMEOUT
 
 static volumeCurve_t *listVolumeCurves[] = {
     &volumeCurveLinear,
@@ -72,7 +76,11 @@ volume_functions_t *getVolume(const char **name) {
 static int initVolume(void) {
     /* Initialize some values*/
     common_data.volume_level_status = -1;
+#ifdef TIME_DEFINED_TIMEOUT 
+    common_data.timestampLastRX = common_data.timestampLastTX = (struct timespec) { 0, 0 };
+#else
     common_data.volume_out_timeout = common_data.volume_in_timeout = 0;
+#endif // #ifdef TIME_DEFINED_TIMEOUT
     common_data.alsa_volume_max = common_data.alsa_volume_min = 0;
 
     config_setting_t *conf_setting = NULL;
@@ -130,13 +138,20 @@ static int processVolume(double *volumeExternal) {
         return EXIT_SUCCESS;
     }
     
+#ifdef TIME_DEFINED_TIMEOUT
+    int timeout;
+    clock_gettime(CLOCK_MONOTONIC, &timestampCurrent);
+    if((timeout = timestampCurrent.tv_sec - common_data.timestampLastTX.tv_sec) <= DEFAULT_PROCESS_TIMEOUT_IN) {
+        syslog(LOG_DEBUG, "Incoming volume level processing timeout (completed): %i/%i", timeout, DEFAULT_PROCESS_TIMEOUT_IN);
+#else
     if(common_data.volume_in_timeout > 0) {
         common_data.volume_in_timeout--;
-        
+        syslog(LOG_DEBUG, "Incoming volume level processing timeout: %i", common_data.volume_in_timeout);
+#endif // #ifdef TIME_DEFINED_TIMEOUT
+    
         pthread_mutex_unlock(&lockProcess);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
-        syslog(LOG_DEBUG, "Incoming volume level processing timeout: %i", common_data.volume_in_timeout);
         return EXIT_SUCCESS;
     }
     
@@ -173,8 +188,10 @@ static int processVolume(double *volumeExternal) {
         common_data.initial_volume_min, common_data.volume_min);
     }
     else if((int)volume_level == (int)common_data.volume_level_status) {
+#ifndef TIME_DEFINED_TIMEOUT
         if(common_data.volume_out_timeout > 0)
             common_data.volume_out_timeout--;
+#endif // #ifndef TIME_DEFINED_TIMEOUT
             
         pthread_mutex_unlock(&lockProcess);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -187,7 +204,11 @@ static int processVolume(double *volumeExternal) {
     
     setMixer((int)volume_level); // removed ceil(), caused erange due to rounding errors (if necessary convert to ceil(float) to eliminate small rounding errors?).
     
+#ifdef TIME_DEFINED_TIMEOUT
+    clock_gettime(CLOCK_MONOTONIC , &common_data.timestampLastRX);
+#else
     common_data.volume_out_timeout = DEFAULT_PROCESS_TIMEOUT_OUT;
+#endif // #ifdef TIME_DEFINED_TIMEOUT
     
     syslog(LOG_DEBUG, "Volume level mutation (ext. initiated): ext. (int.): %.2f (%.2f)", common_data.volume_level_status, volume_level);
     

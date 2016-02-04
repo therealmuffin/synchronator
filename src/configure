@@ -40,10 +40,15 @@ displayhelp()
     echo "    --program-suffix=SUFFIX   append SUFFIX to installed program names"
     echo ""
     echo "Process variables:"
-    echo "    --process-timeout-rx=INT  Sets number of incoming commands to forego after"
-    echo "                              each outgoing command to prevent a loop [4]."
-    echo "    --process-timeout-tx=INT  Sets number of outgoing commands to forego after"
-    echo "                              each incoming command to prevent a loop [2]."
+    echo "    --process-timeout-rx=INT  Sets number of seconds to ignore incoming volume"
+    echo "                              commands after each outgoing volume command to"
+    echo "                              prevent a loop [2](*)."
+    echo "    --process-timeout-tx=INT  Sets number of seconds to ignore outgoing volume"
+    echo "                              commands after each incoming volume command to"
+    echo "                              prevent a loop [2](*)."
+    echo "*) if _POSIX_MONOTONIC_CLOCK is not available these variables set number of"
+    echo "   incoming (outgoing) volume commands to forego after each outgoing (incoming)"
+    echo "   command to prevent a loop [20]"
 }
 
 export_config()

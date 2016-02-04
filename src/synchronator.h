@@ -1,5 +1,7 @@
 #ifndef SYNCHRONATOR_H
     #define SYNCHRONATOR_H
+    
+    #include <unistd.h>
 
     #ifndef NULL
         #define NULL (void *)0
@@ -36,6 +38,10 @@
     #else
         #define USAGE_MSQ
     #endif // #ifdef DISABLE_MSQ
+    
+    #ifdef _POSIX_MONOTONIC_CLOCK
+        #define TIME_DEFINED_TIMEOUT
+    #endif
 
     #ifndef PROGRAM_PREFIX
         #define PROGRAM_PREFIX
@@ -87,10 +93,16 @@
     #define TEMPLOCATION "/tmp"
     #define MAX_PATH_LENGTH 50
 
+    #ifdef TIME_DEFINED_TIMEOUT
+    /* Ignore incoming commands within seconds of outgoing command and vice versa to prevent a loop */
+        #define DEFAULT_PROCESS_TIMEOUT_IN 2
+        #define DEFAULT_PROCESS_TIMEOUT_OUT 2
+    #else
     /* Ignore X incoming commands after outgoing command and vice versa to prevent a loop */
-    #define DEFAULT_PROCESS_TIMEOUT_IN 20
-    #define DEFAULT_PROCESS_TIMEOUT_OUT 20
-
+        #define DEFAULT_PROCESS_TIMEOUT_IN 20
+        #define DEFAULT_PROCESS_TIMEOUT_OUT 20
+    #endif
+    
     #ifdef CUSTOM_PROCESS_TIMEOUT_RX
         #undef DEFAULT_PROCESS_TIMEOUT_IN
         #define DEFAULT_PROCESS_TIMEOUT_IN CUSTOM_PROCESS_TIMEOUT_RX
