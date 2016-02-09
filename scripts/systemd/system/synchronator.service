@@ -1,0 +1,10 @@
+[Unit]
+Description=Synchronator Volume Control Service
+
+[Service]
+PIDFile=/var/run/synchronator/synchronator.pid
+ExecStartPre=/usr/bin/mkdir -p /var/run/synchronator
+ExecStart=/usr/local/bin/synchronator
+
+[Install]
+WantedBy=multi-user.target
