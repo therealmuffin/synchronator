@@ -9,6 +9,7 @@
         void (*deinit)(void);
         int (*compileVolumeCommand)(long *volumeLevel);
         int (*compileDeviceCommand)(char *header, char *action);
+        int (*processCommand)(void *event_header, void *event);
         int (*strip_raw_input)(unsigned char *device_status_message, ssize_t bytes_read);
     
     } process_method_t;

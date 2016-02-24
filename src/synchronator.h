@@ -16,7 +16,7 @@
     #endif // #ifdef INCLUDE_VERSION
     
     #ifndef DISABLE_SERIAL
-        #define USAGE_SERIAL "  Serial interface\n"
+        #define USAGE_SERIAL " Serial interface\n"
     #else
         #define USAGE_SERIAL
     #endif // #ifdef USAGE_SERIAL

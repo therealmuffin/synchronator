@@ -60,7 +60,7 @@ static int compileVolumeCommand(long *volumeInternal, char serial_command[200]);
 static int sendDeviceCommand(char *category, char *action);
 static int replyDeviceCommand(char *category, char *action);
 static int compileDeviceCommand(char *header, char *action, char serial_command[200]);
-static int processCommand(char *event_header, char *event);
+static int processCommand(void *event_header, void *event);
 static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_read);
 
 
@@ -71,6 +71,7 @@ process_method_t processAscii = {
     .deinit = &deinit,
     .compileVolumeCommand = &sendVolumeCommand,
     .compileDeviceCommand = &sendDeviceCommand,
+    .processCommand = &processCommand,
     .strip_raw_input = &strip_raw_input
 };
 
@@ -122,6 +123,11 @@ static int init(void) {
     if(config_lookup_string(&config, "response.indicator", &ascii_data.requestIndicator)) {
         ascii_data.allowRequests = 1;
         syslog(LOG_INFO, "[OK] response.indicator: %s", ascii_data.requestIndicator);
+    }
+    
+    if(common_data.mod->command) {
+        if(common_data.mod->command->init(0) == EXIT_FAILURE)
+            return EXIT_FAILURE;
     }
     
     return EXIT_SUCCESS;
@@ -318,7 +324,7 @@ static int compileDeviceCommand(char *category, char *action, char serial_comman
     return EXIT_SUCCESS;
 } /* end serial_send_ascii */
 
-static int processCommand(char *event_header, char *event) {
+static int processCommand(void *event_header, void *event) {
     int count = 0;
     int entry_count = 0;
     int total_root_entries = 0;
@@ -346,7 +352,7 @@ static int processCommand(char *event_header, char *event) {
         !config_setting_lookup_bool(config_child, "register", &int_setting) || int_setting == 0 ||
         !(config_entry = config_setting_get_member(config_child, "header")) || 
         (current_header = config_setting_get_string_elem(config_entry, common_data.diff_commands)) == NULL || 
-        strcmp(current_header, event_header) != 0)
+        strcmp(current_header, (char *)event_header) != 0)
             continue;
         
         current_header = config_setting_name(config_child);
@@ -355,7 +361,7 @@ static int processCommand(char *event_header, char *event) {
         for(entry_count = 0; entry_count < total_child_entries; entry_count++) {
             config_entry = config_setting_get_elem(config_child, entry_count);
             if((current_event = config_setting_get_string_elem(config_entry, common_data.diff_commands)) == 0 || 
-            strcmp(current_event, event) != 0)
+            strcmp(current_event, (char *)event) != 0)
                 continue;
             
             snprintf(status_file_path, MAX_PATH_LENGTH, "%s/%s.%s", TEMPLOCATION, PROGRAM_NAME, current_header);
@@ -502,7 +508,11 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
         }
         
         syslog(LOG_DEBUG, "Detected incoming event (header): %s (%s)", event_ptr, event_header_ptr);
-                    
+        
+        if(common_data.mod->command &&
+        common_data.mod->command->process(&serial_command, tail_ptr-header_ptr) == EXIT_FAILURE)
+            continue;
+            
         if(strcmp(event_header_ptr, ascii_data.volume_header[common_data.diff_commands]) == 0) { // if the delimiter is empty, this will always match
             errno = 0;
             volume_level = strtod(event_ptr, (char **)NULL); // segfault if not number? no, just with more than 1 byte send
@@ -528,5 +538,6 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
 } /* strip_raw_input */
 
 static void deinit(void) {
-    
+    if(common_data.mod->command != NULL)
+        common_data.mod->command->deinit();
 }

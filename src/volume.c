@@ -109,15 +109,9 @@ static int initVolume(void) {
     &common_data.volume_max, -1, 0, 0, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-    if(common_data.discrete_volume) {
-        validateConfigInt(&config, "volume.response.pre_offset", &common_data.responsePreOffset, -1, 0, 0, 0);
-        validateConfigInt(&config, "volume.response.post_offset", &common_data.responsePostOffset, -1, 0, 0, 0);
-        validateConfigDouble(&config, "volume.response.multiplier", &common_data.responseMultiplier, -1, 0, 0, 1);
-        validateConfigBool(&config, "volume.response.invert_multiplier", &int_setting, 0);
-        if(int_setting)
-            common_data.responseMultiplier = 1/common_data.responseMultiplier;
-        if(common_data.responsePreOffset || common_data.responsePostOffset || common_data.responseMultiplier != 1)
-            common_data.responseDivergent = 1;
+    if(common_data.mod->volumeResponse) {
+        if(common_data.mod->volumeResponse->init() == EXIT_FAILURE)
+            return EXIT_FAILURE;
     }
         
     common_data.initial_volume_min = common_data.volume_min;
@@ -159,8 +153,8 @@ static int processVolume(double *volumeExternal) {
      * eg cp800: (receiverVolume + 94) * 0.926 (according to control4 driver). */
      
     double volume_level = *volumeExternal;
-    if(common_data.responseDivergent)
-        volume_level = (volume_level + common_data.responsePreOffset) * common_data.responseMultiplier + common_data.responsePostOffset;
+    if(common_data.mod->volumeResponse)
+        common_data.mod->volumeResponse->process(&volume_level);
     
     /* Adjust the volume ranges according to current amplifier volume level */
     if(volume_level > common_data.volume_max || common_data.volume_max != common_data.initial_volume_max 
@@ -220,5 +214,6 @@ static int processVolume(double *volumeExternal) {
 
 
 static void deinitVolume(void) {
-
+    if(common_data.mod->volumeResponse != NULL)
+        common_data.mod->volumeResponse->deinit();
 }

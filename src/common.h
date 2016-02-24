@@ -9,6 +9,7 @@
     #include "processData.h"
     #include "mixer.h"
     #include "volume.h"
+    #include "mods.h"
 
     /* Variables are set while validating/processing config, some are useful shortcuts */
     typedef struct {
@@ -24,14 +25,10 @@
         /* Status variable, external volume volume level if discrete, if relative internal 
             volume level */
         double volume_level_status;
-    
+        
         /* Multiplies non-discrete volume commands (not/partially implemented) */
         int nd_vol_multiplier;
         
-        /* Amp response offsets and multiplier if applicable */
-        int responsePreOffset, responsePostOffset, responseDivergent;
-        double responseMultiplier;
-    
         /* Ignore X incoming commands after outgoing command and vice versa to prevent a loop */
         
 #ifdef TIME_DEFINED_TIMEOUT
@@ -47,6 +44,7 @@
         process_method_t *process;
         interface_t *interface;
         volume_functions_t *volume;
+        mods_t *mod;
     } common_data_t;
 
     extern common_data_t common_data;

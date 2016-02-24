@@ -35,28 +35,29 @@
 #include "volume.h"
 #include "interfaces.h"
 #include "processData.h"
+#include "mods.h"
 #ifndef DISABLE_MSQ
     #include "messageQueue.h"
 #endif
 
 /* This data has to be global so the can be accessed by the termination handler */
 common_data_t common_data;
-int lock_file = -1;
+static int lock_file = -1;
 config_t config;
 pthread_mutex_t lockProcess;
 pthread_mutex_t lockConfig;
 
 pthread_t mainThread;
-pthread_t watchMixerThread;
-pthread_t interfaceListenThread;
-pthread_t statusQueryThread;
+static pthread_t watchMixerThread;
+static pthread_t interfaceListenThread;
+static pthread_t statusQueryThread;
 
 /* Prototypes of main functions */
-int synchronatord(char *customConfigLocation);
-int init(void);
-int daemonize(void);
-void *queryStatus(void *arg);
-void terminate(int signum);
+static int synchronatord(char *customConfigLocation);
+static int init(void);
+static int daemonize(void);
+static void *queryStatus(void *arg);
+static void terminate(int signum);
 
 int main(int argc, char *argv[]) {   
     /* variables used on multiple locations are set at the top of the function */
@@ -138,6 +139,7 @@ int main(int argc, char *argv[]) {
     common_data.process = NULL;
     common_data.interface = NULL;
     common_data.volume = NULL;
+    common_data.mod = NULL;
     
     struct sigaction signal_action;
     signal_action.sa_handler = terminate;
@@ -157,7 +159,7 @@ int main(int argc, char *argv[]) {
     exit(status);
 } /* end main */
 
-int daemonize(void) {
+static int daemonize(void) {
     int count;
     pid_t synchronatord_pid;
     
@@ -216,7 +218,7 @@ int daemonize(void) {
 } /* end daemonize */
 
 /* initializes the application and executes the pthreads */
-int synchronatord(char *customConfigLocation) {
+static int synchronatord(char *customConfigLocation) {
     int status = 0;
     int count = 0;
     
@@ -300,7 +302,7 @@ int synchronatord(char *customConfigLocation) {
 } /* end synchronatord */
 
 /* Will validate the data retrieved from the configuration file */
-int init(void) {
+static int init(void) {
     int status;
     config_setting_t *conf_setting = NULL;
     const char *conf_value = NULL;
@@ -329,7 +331,20 @@ int init(void) {
     &common_data.statusQueryInterval, -1, 0, 255, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-    /* Set volume (curve) functions */
+    
+   /***************************************
+    * INITIALIZING MODIFICATION FUNCTIONS
+    ***************************************/
+    
+    common_data.mod = &mod;
+    if(common_data.mod->init() == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    
+    
+   /***************************************
+    * INITIALIZING VOLUME CURVE FUNCTIONS
+    ***************************************/
+    
     conf_value = NULL;
     config_lookup_string(&config, "volume.curve", &conf_value);
     if(!(common_data.volume = getVolume(&conf_value))) {
@@ -343,7 +358,11 @@ int init(void) {
     if(common_data.volume->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-    /* Set and initialise process type */
+    
+   /***************************************
+    * INITIALIZING DATA FUNCTIONS
+    ***************************************/
+    
     conf_value = NULL;
     config_lookup_string(&config, "data_type", &conf_value);
     if(!(common_data.process = getProcessMethod(&conf_value))) {
@@ -356,7 +375,11 @@ int init(void) {
     if(common_data.process->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
     
-    /* Set and initialise communication interface */
+    
+   /***************************************
+    * INITIALIZING INTERFACE FUNCTIONS
+    ***************************************/
+    
     conf_value = NULL;
     config_lookup_string(&config, "interface", &conf_value);
     if(!(common_data.interface = getInterface(&conf_value))) {
@@ -368,16 +391,27 @@ int init(void) {
     }
     if(common_data.interface->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
-        
-    /* initialise mixer device */
+    
+   /***************************************
+    * INITIALIZING MIXER FUNCTIONS
+    ***************************************/
+    
     if(initMixer() == EXIT_FAILURE)
         return EXIT_FAILURE;
-
-    /* init multipliers */
+    
+    
+   /***************************************
+    * GENERATING VOLUME MULTIPLIERS
+    ***************************************/
+    
     common_data.volume->regenerateMultipliers();
-
+    
 #ifndef DISABLE_MSQ
-    /* initialise message queue */
+    
+   /***************************************
+    * INITIALIZING MESSAGE QUEUE
+    ***************************************/
+    
     if(initMsQ() == EXIT_FAILURE)
         return EXIT_FAILURE;
 #endif
@@ -390,7 +424,7 @@ int init(void) {
     return EXIT_SUCCESS;
 } /* end init */
 
-void *queryStatus(void *arg) {
+static void *queryStatus(void *arg) {
     sigset_t *thread_sigmask = (sigset_t *)arg;
     if(pthread_sigmask(SIG_BLOCK, thread_sigmask, NULL) < 0) {
         syslog(LOG_ERR, "Failed to ignore signals in statusQuery: %i", errno);
@@ -415,7 +449,7 @@ void *queryStatus(void *arg) {
 } /* queryStatus */
 
 /* Handles the termination process and frees if required */
-void terminate(int signum) {    
+static void terminate(int signum) {    
     /* Check if pthread_t has been initialized from default value and is still alive,
      * if so, cancel and join it. */
     if(!pthread_equal(watchMixerThread, mainThread) && pthread_kill(watchMixerThread, 0) == 0) {
@@ -441,6 +475,8 @@ void terminate(int signum) {
         common_data.interface->deinit();
     if(common_data.process)
         common_data.process->deinit();
+    if(common_data.mod)
+        common_data.mod->deinit();
     
     deinitMixer();
     if(common_data.volume)

@@ -24,6 +24,10 @@
 #include "processData.h"
 
 
+/***********************************
+ * Process method selection
+ ***********************************/
+
 extern process_method_t processAscii;
 extern process_method_t processNumeric;
 
@@ -47,7 +51,9 @@ process_method_t *getProcessMethod(const char **name) {
     return NULL;
 }
 
-/* Device status functions + data */
+/***********************************
+* Device status functions + data
+**********************************/
 
 static int updateStatus(const char *name, const char *value);
 static void retrieveStatus(const char *name, const char **value);

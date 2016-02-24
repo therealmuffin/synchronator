@@ -94,16 +94,47 @@ curve - Volume curve can be linear or logarithmic. If volume control is relative
 
 ###### [response volume sub-section]
 
-The following settings allow translation of the incoming volume range to the outgoing volume range (if different).
+The following settings allow translation of the incoming volume range to the outgoing volume range (if different). Additional types can easily be created in C if necessary.
+
+type - set type of translation [conditional_resize|range]
+
+###### range settings
 
 pre_offset - offset added pre multiplier
 
-multiplier - multiplier applied on the incoming volume command
+multiplier - multiplier applied on the incoming volume command (must be formatted as a floating point (e.g. 2.0 instead of 2)
 
 post_offset - offset added post multiplier
 
 invert_multiplier - for ease in use the multiplier can be inverted [TRUE`*`|False]
 
+
+###### conditional_resize settings
+
+limit - if a volume level is received above this limit, it will be divided by the diviser
+
+type - type of limit [upper_limit|lower_limit]
+
+diviser - conditional diviser if limit is crossed
+
+
+##### [command_mod section]
+
+Device specific mods can be created in C, variables can be set in this section
+
+profile - checksum profile to be implemented [dynaudio|denon-avr]
+
+###### dynaudio settings
+
+This mod generates the status value and checksum bytes. In addition it processes the status byte, checking for zone and input.
+
+zone - sets zone to control [1-3]
+
+default_input - default input number [1-7]
+
+###### denon-avr settings
+
+This mod standardises incoming volume data, e.g. MV085 to MV08. Otherwise, Synchronator would not be able to distinguish between MV85 and MV085.
 
 #####[query section]
 
@@ -159,7 +190,7 @@ Each name defines an array containing three values (e.g. 'input=(FALSE, "command
 
 Numerical values must be within 0-255 bounds (unsigned 8 bit values).
 
-The header in the main section is formatted as an array delimited by square brackets
+The header and tail in the main section are formatted as arrays delimited by square brackets
 
 None of the numeric data variables are mandatory except for volume. If no other variables are defined (header, tail, etc), every incoming byte is assumed to be volume data. Every outgoing byte represents volume data
 

@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <sys/types.h> 
 #include <stdint.h> // declares uint8_t a.o.
-//#include <math.h>
 #include <time.h>
 #include <pthread.h>
 #include <signal.h>
@@ -41,7 +40,8 @@ typedef struct {
     /* Points to buffer that is send through serial interface + reference to sections */
     uint8_t *serial_command[2], *event_header[2], *event[2], *command_tail[2];
 // length of serial_command == command_tail - serial_command + 1?
-    int header_length[2], volume_header[2], serial_command_length[2];
+    int header_length[2], volume_header[2], serial_command_length[2], tail_length[2];
+    int alwaysMatchTail;
     
     uint8_t *statusQuery;
     
@@ -63,7 +63,7 @@ static int compileVolumeCommand(long *volumeInternal);
 static int sendDeviceCommand(char *category, char *action);
 static int replyDeviceCommand(char *category, char *action);
 static int compileDeviceCommand(char *header, char *action);
-static int processCommand(int *category_lookup, int *action_lookup);
+static int processCommand(void *category_lookup, void *action_lookup);
 static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_read);
 
 process_method_t processNumeric = {
@@ -73,6 +73,7 @@ process_method_t processNumeric = {
     .deinit = &deinit,
     .compileVolumeCommand = &sendVolumeCommand,
     .compileDeviceCommand = &sendDeviceCommand,
+    .processCommand = &processCommand,
     .strip_raw_input = &strip_raw_input
 };
 
@@ -82,6 +83,8 @@ static void help(void) {
 }
 
 static int init(void) {
+    dechex_data.alwaysMatchTail = 0;
+    
     config_setting_t *conf_setting = NULL;
     int count;
     int main_count;
@@ -99,44 +102,55 @@ static int init(void) {
         return EXIT_FAILURE;
     }
     
-    if((int)common_data.responseMultiplier != common_data.responseMultiplier) {
-        syslog(LOG_ERR, "[ERROR] Numeric does not 'float'! Setting 'volume.response.multiplier'" 
-                        " is not an integer: %.2f", common_data.responseMultiplier);
-        return EXIT_FAILURE;
-    }
-    
-    for(main_count = 0; main_count <= common_data.diff_commands; main_count++) {
-        snprintf(config_query, CONFIG_QUERY_SIZE, "header.[%i]", main_count);
+    for(main_count = 0; main_count <= 1; main_count++) {
+        snprintf(config_query, CONFIG_QUERY_SIZE, "header.[%i]", main_count*common_data.diff_commands);
         if((conf_setting = config_lookup(&config, config_query)) == NULL || config_setting_is_array(conf_setting) == CONFIG_FALSE) {
             syslog(LOG_INFO, "[NOTICE] Setting not present or not formatted as array, ignoring: %s", config_query);
             dechex_data.header_length[main_count] = 0;
         }
         else
             dechex_data.header_length[main_count] = config_setting_length(conf_setting);
-        dechex_data.serial_command[main_count] = calloc(dechex_data.header_length[main_count]+3, sizeof(uint8_t*));
+            
+        snprintf(config_query, CONFIG_QUERY_SIZE, "tail.[%i]", main_count*common_data.diff_commands);
+        if((conf_setting = config_lookup(&config, config_query)) == NULL || config_setting_is_array(conf_setting) == CONFIG_FALSE) {
+            syslog(LOG_INFO, "[NOTICE] Setting not present or not formatted as array, ignoring: %s", config_query);
+            dechex_data.tail_length[main_count] = 0;
+        }
+        else
+            dechex_data.tail_length[main_count] = config_setting_length(conf_setting);
+        
+        dechex_data.serial_command[main_count] = calloc(dechex_data.header_length[main_count]+2+dechex_data.tail_length[main_count], sizeof(uint8_t*));
         dechex_data.event_header[main_count] = dechex_data.serial_command[main_count]+dechex_data.header_length[main_count];
         dechex_data.event[main_count] = dechex_data.event_header[main_count]+1;
         dechex_data.command_tail[main_count] = dechex_data.event[main_count]+1;
-        dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+3;
+        dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+2+dechex_data.tail_length[main_count];
         
+        snprintf(config_query, CONFIG_QUERY_SIZE, "header.[%i]", main_count*common_data.diff_commands);
         for(count = 0; count < dechex_data.header_length[main_count]; count++) {
             if(validateConfigInt(&config, config_query, (int *)&dechex_data.serial_command[main_count][count], 
             count, 0, 255, -1) == EXIT_FAILURE)
                 return EXIT_FAILURE;
         }
-        if(validateConfigInt(&config, "tail", (int *)dechex_data.command_tail[main_count], 
-        main_count, 0, 255, -2) == EXIT_FAILURE) {
-            dechex_data.serial_command_length[main_count]--;
-            dechex_data.command_tail[main_count] = NULL;
-        }
         if(validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], 
-        main_count, 0, 255, -2) == EXIT_FAILURE) {
+        main_count*common_data.diff_commands, 0, 255, -2) == EXIT_FAILURE) {
             dechex_data.serial_command_length[main_count]--;
             dechex_data.event[main_count] = dechex_data.event_header[main_count];
-            if(dechex_data.command_tail[main_count] != NULL)
+            if(dechex_data.tail_length[main_count] != 0)
                 dechex_data.command_tail[main_count]--; 
         }
+        snprintf(config_query, CONFIG_QUERY_SIZE, "tail.[%i]", main_count*common_data.diff_commands);
+        for(count = 0; count < dechex_data.tail_length[main_count]; count++) {
+            if(validateConfigInt(&config, config_query, (int *)&dechex_data.command_tail[main_count][count], 
+            count, 0, 255, -1) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        }
     }
+    
+    if(common_data.mod->command) {
+        if(common_data.mod->command->init(2, &dechex_data.alwaysMatchTail, &dechex_data.serial_command_length) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+    }
+    
     if(common_data.send_query) {
         dechex_data.statusQuery = calloc(common_data.statusQueryLength, sizeof(uint8_t*));
         for(count = 0; count < common_data.statusQueryLength; count++) {
@@ -146,6 +160,7 @@ static int init(void) {
         }
         common_data.statusQuery = (const char *)dechex_data.statusQuery;
     }
+    
     if(!common_data.discrete_volume && validateConfigInt(&config, "volume.min", 
     &dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
@@ -261,6 +276,9 @@ static int compileVolumeCommand(long *volumeInternal) {
         common_data.volume_level_status = *volumeInternal;
     }
     
+    if(common_data.mod->command)
+        common_data.mod->command->produce((void *)dechex_data.serial_command[0]);
+    
     return EXIT_SUCCESS;
 }
 
@@ -335,10 +353,13 @@ static int compileDeviceCommand(char *category, char *action) {
     }
     *dechex_data.event_header[0] = command;
     
+    if(common_data.mod->command)
+        common_data.mod->command->produce(dechex_data.serial_command[0]);
+    
     return EXIT_SUCCESS;
 } /* end serial_send_dechex */
 
-static int processCommand(int *category_lookup, int *action_lookup) {
+static int processCommand(void *category_lookup, void *action_lookup) {
     int count = 0;
     int entry_count = 0;
     int total_root_entries = 0;
@@ -367,7 +388,7 @@ static int processCommand(int *category_lookup, int *action_lookup) {
         !config_setting_lookup_bool(config_child, "register", &int_setting) || int_setting == 0 ||
         !(config_entry = config_setting_get_member(config_child, "header")) || 
         (int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 || 
-        int_setting != *category_lookup)
+        int_setting != *(int *)category_lookup)
             continue;
         
         current_header = config_setting_name(config_child);
@@ -376,7 +397,7 @@ static int processCommand(int *category_lookup, int *action_lookup) {
         for(entry_count = 0; entry_count < total_child_entries; entry_count++) {
             config_entry = config_setting_get_elem(config_child, entry_count);
             if((int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 || 
-            int_setting != *action_lookup)
+            int_setting != *(int *)action_lookup)
                 continue;
             
             snprintf(status_file_path, MAX_PATH_LENGTH, "%s/%s.%s", TEMPLOCATION, PROGRAM_NAME, current_header);
@@ -409,13 +430,12 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
     int status = 0;
     int count = 0;
     int completed = 0;
-    int messageIndexDfl = dechex_data.event_header[common_data.diff_commands] == dechex_data.event[common_data.diff_commands] ? 
-        !dechex_data.header_length[common_data.diff_commands]*2 : !dechex_data.header_length[common_data.diff_commands];
-    int alwaysVolume = dechex_data.event_header[common_data.diff_commands] == dechex_data.event[common_data.diff_commands] ? 1 : 0;
+    int messageIndexDfl = dechex_data.event_header[1] == dechex_data.event[1] ? 
+        !dechex_data.header_length[1]*2 : !dechex_data.header_length[1];
+    int alwaysVolume = dechex_data.event_header[1] == dechex_data.event[1] ? 1 : 0;
     static int header_count = 0;
+    static int tail_count = 0;
     static int message_index = 0;
-    static int message_category = 0;
-    static int message_action = 0;
     double volume_level = -1;
     
     if(!message_index)
@@ -424,11 +444,12 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
     for(count = 0; count < bytes_read; count++) {
         // if only volume, immediately send to volume process.
         
-        if((int)device_status_message[count] == dechex_data.serial_command[common_data.diff_commands][header_count] && 
-        dechex_data.header_length[common_data.diff_commands] != 0) {
+        if((int)device_status_message[count] == dechex_data.serial_command[1][header_count] && 
+        dechex_data.header_length[1] != 0) {
             header_count++;
-            if(header_count == dechex_data.header_length[common_data.diff_commands]) {
+            if(header_count == dechex_data.header_length[1]) {
                 header_count = 0;
+                tail_count = 0; // reset tail
                 message_index = alwaysVolume ? 2 : 1;
                 continue;
             }
@@ -438,47 +459,56 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
         }
         switch(message_index) {
             case 1:
-                message_category = (int)device_status_message[count];
+                *dechex_data.event_header[1] = (uint8_t)device_status_message[count];
                 message_index = 2;
                 break;
             case 2:
-                message_action = (int)device_status_message[count];
-                if(dechex_data.command_tail[common_data.diff_commands] == NULL)
+                *dechex_data.event[1] = (uint8_t)device_status_message[count];
+                if(dechex_data.tail_length[1] == 0)
                     completed = 1;
                 message_index = 3;
                 break;
             case 3:
-                if((int)device_status_message[count] != *dechex_data.command_tail[common_data.diff_commands])
-                    continue;
-                completed = 1;
+                if((int)device_status_message[count] == dechex_data.command_tail[1][tail_count] || dechex_data.alwaysMatchTail) {
+                    if(common_data.mod->command)
+                        *(dechex_data.command_tail[1]+tail_count) = (uint8_t)device_status_message[count];
+                    tail_count++;
+                    if(tail_count == dechex_data.tail_length[1]) {
+                        tail_count = 0;
+                        completed = 1;
+                    }
+                }
+                else {
+                    message_index = messageIndexDfl;
+                    tail_count = 0;
+                    continue; // doesn't this invalidate the tail? FIXED! see -1
+                }
+                    
                 break;
             default:
                 continue;
         } /* end switch */
         
         if(completed) {
-        
-            syslog(LOG_DEBUG, "Detected incoming event (header): %i (%i)", message_action, message_category);
+            message_index = messageIndexDfl;
+            completed = 0;
             
-            if(message_category == dechex_data.volume_header[common_data.diff_commands] || alwaysVolume) {
-                volume_level = (double)message_action;
+            if(common_data.mod->command &&
+            common_data.mod->command->process(dechex_data.serial_command[1], dechex_data.serial_command_length[1]) == EXIT_FAILURE)
+                continue;
+            
+            if(*dechex_data.event_header[1] == dechex_data.volume_header[1] || alwaysVolume) {
+                volume_level = (double)*dechex_data.event[1];
                 status = common_data.volume->process(&volume_level);
             }
             else
-                status = processCommand(&message_category, &message_action);
+                status = processCommand((int *)dechex_data.event_header[1], (int *)dechex_data.event[1]);
             
             if(status == EXIT_FAILURE) {
                 pthread_kill(mainThread, SIGTERM);
                 pause();
             }
-
-            message_index = messageIndexDfl;
-
-            completed = 0;
         }
-        else if(dechex_data.command_tail[common_data.diff_commands] && 
-        (int)device_status_message[count] == *dechex_data.command_tail[common_data.diff_commands])
-            message_index = messageIndexDfl;
     }
     return EXIT_SUCCESS; // due to the static vars it will remember data between runs...
 } /* serial_strip_dechex */
@@ -490,4 +520,6 @@ static void deinit(void) {
         free(dechex_data.serial_command[1]);
     if(dechex_data.statusQuery != NULL)
         free(dechex_data.statusQuery);
+    if(common_data.mod->command != NULL)
+        common_data.mod->command->deinit();
 }

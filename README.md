@@ -31,11 +31,12 @@ Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this
 - Cambridge Audio
 - Carry Audio Design
 - Classé
+- Devialet
+- Dynaudio (Connect/Xeo/Focus-XD)
 - Leema Acoustics
 - Lyngdorf
 - NAD
 - Parasound
-- Devialet
 
 
 ## Features summary
