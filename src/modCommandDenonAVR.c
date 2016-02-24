@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <syslog.h>
-#include <math.h>
 
 #include "common.h"
 #include "processData.h"
@@ -42,7 +41,6 @@ modCommand_t modCommandDenon = {
     .deinit = &deinit
 };
 
-static int inputPos, inputLen, zone, defaultInput;
 
 static void help(void) {
     printf("Denon Tail Mod\n"
