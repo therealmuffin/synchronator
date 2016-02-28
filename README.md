@@ -2,7 +2,7 @@
 
 Synchronator brings bit perfect volume control to Hi-Fi systems with Linux as source. 
 
-This enables controll of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, or MPD application a.o.
+This enables control of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, or MPD application a.o.
 
 
 ## Technical background
