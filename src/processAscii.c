@@ -495,13 +495,13 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
                 processRequest(event_header_ptr);
                 
             /* check if we're still in the buffer, otherwise break loop */
-            if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
+            if((long)message_cpy-((long)device_status_message+bytes_read) >= 0)
                 break;
             continue;
         }
         else { // shouldn't have gotten here, skip to next message or break loop
             /* check if we're still in the buffer, otherwise break loop */
-            if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
+            if((long)message_cpy-((long)device_status_message+bytes_read) >= 0)
                 break;
             
             continue;
@@ -523,7 +523,7 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
             status = processCommand(event_header_ptr, event_ptr);
         
         /* check if we're still in the buffer, otherwise break loop */
-        if((int)message_cpy-((int)device_status_message+bytes_read) >= 0)
+        if((long)message_cpy-((long)device_status_message+bytes_read) >= 0)
             break;
         
         if(status == EXIT_FAILURE) {
