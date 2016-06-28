@@ -24,7 +24,7 @@ PIDFILE=$PIDLOCATION/$NAME.pid
 DAEMON_ARGS="-i /usr/local/etc/"$NAME".conf"
 USER=root
 
-[ -x $binary ] || exit 0
+[ -x $DAEMON ] || exit 0
 
 [ -d $PIDLOCATION ] || mkdir $PIDLOCATION
 
