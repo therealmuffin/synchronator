@@ -24,17 +24,19 @@
 
 <p>Synchronator brings bit perfect volume control to Hi-Fi systems with Linux as source. </p>
 
-<p>This enables controll of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, or MPD application a.o.</p>
+<p>This enables control of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, MPD application, or Roon a.o.</p>
 
 <h2>
 <a id="technical-background" class="anchor" href="#technical-background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Technical background</h2>
 
-<p>Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP). In addition, changes in volume level at the amplifier side are synced back.</p>
+<p>Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard*, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP). In addition, changes in volume level at the amplifier side are synced back.</p>
+
+<p>*) For Roon and the like a dummy mixer is created for the actual audio device/dac instead.</p>
 
 <h2>
 <a id="requirements-for-audio-applications" class="anchor" href="#requirements-for-audio-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements for audio applications</h2>
 
-<p>The only requirement for audio applications is that a different device can be set for audio and mixer data.</p>
+<p>The only requirement for audio applications is that it allows Linux (Alsa) to take care of volume instead of some internal algorithm.</p>
 
 <h3>
 <a id="known-supported-applications" class="anchor" href="#known-supported-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known supported applications</h3>
@@ -42,6 +44,7 @@
 <ul>
 <li>Music Player Daemon (MPD)</li>
 <li>UPMPD (DLNA/OpenHome)</li>
+<li>Roon (RoonBridge, RoonServer)</li>
 <li>Shairport and derivatives (Airplay)</li>
 <li>Kodi (XBMC) (requires small change in sourcecode)</li>
 </ul>
@@ -54,7 +57,7 @@
 <p>Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this moment I2C devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.</p>
 
 <h3>
-<a id="supported-amplifiersbrands" class="anchor" href="#supported-amplifiersbrands" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported amplifiers/brands</h3>
+<a id="known-supported-amplifiersbrands" class="anchor" href="#known-supported-amplifiersbrands" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known supported amplifiers/brands</h3>
 
 <ul>
 <li>Cambridge Audio</li>
@@ -66,6 +69,7 @@
 <li>Lyngdorf</li>
 <li>NAD</li>
 <li>Parasound</li>
+<li>...</li>
 </ul>
 
 <h2>
@@ -83,22 +87,23 @@
 <p>Synchronator is designed to synchronise the volume level between Linux and Hi-Fi. However, other applications can be thought of also. By running multiple instances of Synchronator, commands between incompatible devices can be translated. A few examples follow:</p>
 
 <ul>
-<li><p>With the NAD M50 Bluesound player one can control the volume level of other NAD equipment (Dac or amplifier). While this is nice if you have that NAD equipment, it is less useful if you have an amplifier of another brand. Synchonator can translate commands between these two incompatible devices.</p></li>
+<li><p>With the NAD M50 Bluesound player one can control the volume level of other NAD equipment (dac or amplifier). While this is nice if you have that NAD equipment, it is less useful if you have an amplifier of another brand. Synchonator can translate commands between these two incompatible devices.</p></li>
 <li><p>It is possible to control your amplifier volume level from within Denon Heos and by extension Spotify Connect. The Denon Heos Link and Drive can control Denon and Marantz amplifiers via TCP/IP. Synchronator can translate these commands and enable this functionality for other brands as well.</p></li>
 </ul>
 
 <h2>
 <a id="installation-and-configuration" class="anchor" href="#installation-and-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation and configuration</h2>
 
-<p>For installation check the installation manual or the extended installation manual</p>
+<p>For installation check the <a href="INSTALL_MANUAL.md">installation manual</a> or the <a href="INSTALL_MANUAL_EXT.md">extended installation manual</a></p>
 
-<p>For setting the appropriate configuration settings check the configuration manual</p>
+<p>For setting the appropriate configuration settings check the <a href="CONFIG_MANUAL.md">configuration manual</a></p>
+
+<p>For using Synchronator in combination with Roon, check the <a href="INSTALL_ROON.md">Roon configuration manual</a>.</p>
 
 <h2>
 <a id="downloads" class="anchor" href="#downloads" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Downloads</h2>
 
-<p>Download the configuration library from here:
-<a href="http://www.hyperrealm.com/libconfig/">http://www.hyperrealm.com/libconfig/</a></p>
+<p>Download the configuration library from <a href="http://www.hyperrealm.com/libconfig/">http://www.hyperrealm.com/libconfig/</a>.</p>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/therealmuffin/synchronator">Synchronator</a> is maintained by <a href="https://github.com/therealmuffin">therealmuffin</a>.</span>
