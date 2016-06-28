@@ -117,7 +117,7 @@ ACTION=="remove", ENV{ID_MODEL}=="Leema_Elements_DAC", RUN+="/etc/init.d/synchro
 
 LABEL="synchronator_end"
 </pre>
-*) You can also run an intermediate script to start other applications along, such as Shairport or a MPD/UPMPDCLI for DLNA functionality.
+*) You can also run an intermediate script to start other applications along, such as Shairport or MPD/UPMPDCLI for DLNA functionality.
 
 Run ```chmod 644 /lib/udev/rules.d/synchronator.conf``` and ```chmod root:root /lib/udev/rules.d/synchronator.conf``` to allow proper access to the file.
 
