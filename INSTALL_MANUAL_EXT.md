@@ -6,21 +6,23 @@ This file provides a more detailed description of the Synchronator installation 
 
 ## Debian (and derivatives)
 
-run 'apt-get update'
+The next two sections show how Synchronator is installed and configured.
 
-#####Install required packages
+### Installation
+
+Run ```apt-get update```
+
+####required packages
 <pre>
-apt-get install libasound2-dev
-apt-get install pkg-config
-apt-get install git
+apt-get install build-essential libasound2-dev alsa-utils pkg-config git
 </pre>
 
-#####Install I2C development package (if required)
+####I2C development package (optional)
 <pre>
 apt-get install libi2c-dev
 </pre>
 
-#####Install libconfig:
+####libconfig:
 <pre>
 wget http://www.hyperrealm.com/libconfig/libconfig-1.5.tar.gz
 tar -zxf libconfig-1.5.tar.gz
@@ -42,7 +44,7 @@ Execute the following command to add the libconfig to LD_LIBRARY_PATH:
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 </pre>
 
-#####Install synchronator:
+####Synchronator:
 <pre>
 git clone https://github.com/therealmuffin/synchronator.git
 cd synchronator/src
@@ -51,7 +53,7 @@ make
 make install
 </pre>
 
-if I2C support is required replace
+if, e.g., I2C support is required replace
 <pre>
 ./configure
 </pre>
@@ -61,6 +63,18 @@ by...
 <pre>
 ./configure --enable-i2c
 </pre>
+
+For more options, check:
+
+<pre>
+./configure --help
+</pre>
+
+###Configuration
+
+If everything is installed correctly, it's time to configure the setup. If you're using Synchronator in combination with Roon, read the [Roon manual](INSTALL_ROON.md) first 
+
+####Alsa
 
 If all this went without issues we need to load a dummy ALSA soundcard:
 <pre>
@@ -77,7 +91,7 @@ Add the following line to /etc/modules to make the module load at boot:
 snd_dummy
 </pre>
 
-#####MPD
+####MPD
 
 Now we need to edit MPD configuration, e.g. /etc/mpd.conf
 
@@ -113,10 +127,11 @@ becomes:
 Now if you change the volume in MPD you should be able to see the change
 going to the dummy soundcard in alsa, run
 <pre>
-apt-get install alsa-utils
 alsamixer
 </pre>
 type F6 and select Dummy.
+
+####Synchronator
 
 Now we need to make a final adjustment in the synchronator configuration
 file and change the serial port. Go to its directory:
@@ -126,7 +141,7 @@ cd sample_configurations
 
 Read the readme file and take a look at the different configuration files. This 
 information in combination with the documentation of your amplifier should enable you to 
-create a configuration file for you amplifier.
+create a configuration file for you amplifier. Any questions can be posted on GitHub.
 
 Copy the configuration file to the directory /usr/local/etc/ or /etc/ with the name 
 synchronator.conf:
@@ -141,8 +156,7 @@ It's time to test the setup. Run the following:
 synchronator -v2
 </pre>
 
-Now it runs in verbose mode so you can see exactly what it's
-doing.
+Now it runs in verbose mode so you can see exactly what's going on.
 
 If you don't see any extra output open a new ssh screen and type:
 <pre>
@@ -151,7 +165,7 @@ tail -f /var/log/syslog | grep synchronator
 
 Test your setup (without source or speakers connected). 
 
-##### Making Synchronator boot at start-up
+##### Making Synchronator start at boot
 
 If it runs without issues make it
 start at boot, for Debian/Ubuntu/Voyage/etc systems:
@@ -182,6 +196,8 @@ Set the directory /tmp to permissions 1777
 <pre>
 chmod 1777 /tmp
 </pre>
+
+Change the user in the init.d script accordingly.
 
 ####KNOWN ISSUES:
 - One known case where baud rate of the serial port was not set correctly. I do not yet

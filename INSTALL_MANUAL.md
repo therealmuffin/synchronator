@@ -1,9 +1,9 @@
 # Synchronator Installation Manual
 
 ## Requirements
-- amplifier that can be controlled externally (rs232, (inverted-)ttl, etc).
-- a computer with a spare serial port (if there is any interest I can investigate adding tcp).
-- Alsa (if there is any interest I can investigate adding OSS).
+- amplifier that can be controlled externally (rs232, (inverted-)ttl, i2c, tcp/ip/network)
+- computer (obviously)
+- Alsa (if there is any interest I can investigate adding OSS)
 - http server with PHP (only if using the MPoD/MPaD php companion script)
 
 ## Preparation serial connection:
@@ -11,10 +11,10 @@
 - For TTL signals: Soekris and some ALIX boards have a TTL output. Otherwise see below.
 - For inverted TTL signals (e.g. Leema): use a RS232 to INV-TTL board.
 I've used: https://secure.robotshop.com/eu/droids-db9-serial-adapter-5.html
-- It can convert RS232 to TTL and TX to INV-TTL. for RX you can take on of the RS232 header, 
-    that should work fine.
+- It can convert RS232 to TTL and TX to INV-TTL. for RX you can take on of the RS232 header, that should work fine.
 
 ## Installation (in a nutshell):
+- read the [Roon manual](INSTALL_ROON.md) first if you're using Synchronator with Roon
 - modprobe snd_dummy and add it to /etc/modules
 - To ensure that the actual audio device can always take position 0 and allow for easier configuration in your audio program, add to /etc/modprobe.d/alsa-base.conf: 
 <pre>
@@ -36,13 +36,14 @@ I've used: https://secure.robotshop.com/eu/droids-db9-serial-adapter-5.html
 - manually place all files at their appropriate location
 
 ## BUILD REQUIREMENTS
-- libconfig (best to build it from source rather than via apt).
+- libconfig (best to build it from [source](http://www.hyperrealm.com/libconfig/) rather than via apt).
 - alsa development library
 - i2c development library when configured with i2c support
 
 
 ## HOW TO GET STARTED
-./configure (add ```--enable-i2c``` to enable I2C)
+type ```.configure --help``` for all configuration options, e.g. to enable I2C:
+```./configure --enable-i2c```
 
 make
 

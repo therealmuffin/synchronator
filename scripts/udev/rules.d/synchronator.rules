@@ -1,0 +1,6 @@
+SUBSYSTEM!="sound", GOTO="synchronator_end"
+
+ACTION=="change", ENV{ID_MODEL}=="Leema_Elements_DAC", ENV{SOUND_INITIALIZED}=="1", RUN+="/etc/init.d/synchronator start"
+ACTION=="remove", ENV{ID_MODEL}=="Leema_Elements_DAC", RUN+="/etc/init.d/synchronator stop"
+
+LABEL="synchronator_end"

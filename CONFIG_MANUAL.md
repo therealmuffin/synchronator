@@ -54,9 +54,13 @@ tcp_echo - return an echo of incoming data [TRUE|FALSE`*`]
 
 ### ALSA options
 
-mixer_name - sets the mixer name on device snd_dummy
+The following options are only necessary if Synchronator is used in combination with Roon or if multiples zones (and therefore multiple instances of Synchronator) run on the same computer.
 
-mixer_index - sets the mixer index on mixer_name
+mixer_device - sets the mixer device [hw:Dummy`*`]
+
+mixer_name - sets the mixer name on mixer_device [Master`*`]
+
+mixer_index - sets the mixer index on mixer_name [0`*`]
 
 
 ## Data processing configuration

@@ -34,11 +34,14 @@ int initMixer(void) {
     snd_mixer_selem_id_t* snd_sid;
     snd_mixer_selem_id_alloca(&snd_sid);
 
-    const char* card = "hw:Dummy";
+    const char* mix_dev = "hw:Dummy";
     const char* mix_name = "Master";
     int mix_index = 0;
     int status = -2;
     
+    if(config_lookup_string(&config, "mixer_device", &mix_dev) == CONFIG_TRUE) {
+        syslog(LOG_INFO, "[OK] mixer_device: %s", mix_dev);
+    }
     if(config_lookup_string(&config, "mixer_name", &mix_name) == CONFIG_TRUE) {
         syslog(LOG_INFO, "[OK] mixer_name: %s", mix_name);
     }
@@ -55,7 +58,7 @@ int initMixer(void) {
         return EXIT_FAILURE;
         pause();
     }
-    if((status = snd_mixer_attach(snd_handle, card)) < 0) {
+    if((status = snd_mixer_attach(snd_handle, mix_dev)) < 0) {
         syslog(LOG_ERR, "Failed to attach device to mixer: %s (%i)", 
             snd_strerror(status), status);
         return EXIT_FAILURE;
