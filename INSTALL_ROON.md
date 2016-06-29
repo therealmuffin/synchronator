@@ -5,9 +5,9 @@ Roon does not allow setting different devices for audio and mixer data. Therefor
 
 ## Roon required additional steps
 
-Two additional steps are required to make Roon work with Synchronator.```*``` 
+Two additional steps are required to make Roon work with Synchronator.<sup>*</sup>
 
-After finishing the steps below, you can continue with the regular installation manual. However, you can skip the step on setting up the dummy mixer. If you want to configure apps like MPD, Shairport do notice that you do not point the mixer to the dummy audio device as instructed but to your actual device and mixer (e.g. hw:0, PCM respectively). Since these applications expect the mixer to always be there, you might want to start and stop them together with your audio device (see the second step on how to do that).```*``` 
+After finishing the steps below, you can continue with the regular installation manual. However, you can skip the step on setting up the dummy mixer. If you want to configure apps like MPD, Shairport do notice that you do not point the mixer to the dummy audio device as instructed but to your actual device and mixer (e.g. hw:0, PCM respectively). Since these applications expect the mixer to always be there, you might want to start and stop them together with your audio device (see the second step on how to do that).<sup>*</sup>
 
 *) If your audio device is internal (and therefore always active), you can skip the second step.
 
