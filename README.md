@@ -7,10 +7,11 @@ This enables control of your Hi-Fi amplifier volume level for Airplay, DLNA, Ope
 
 ## Technical background
 
-Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard*, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP/IR)**. In addition, changes in volume level at the amplifier side are synced back.
+Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard\*, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP/IR)\*\*. In addition, changes in volume level at the amplifier side are synced back.
 
-*) For Roon and the like a dummy mixer is created for the actual audio device/dac instead.
-**) Support for IR control (via LIRC) is experimental. Tester(s) is (are) needed.
+\*) For Roon and the like a dummy mixer is created for the actual audio device/dac instead.
+
+\*\*) Support for IR control (via LIRC) is experimental. Tester(s) is (are) needed.
 
 ## Requirements for audio applications
 
