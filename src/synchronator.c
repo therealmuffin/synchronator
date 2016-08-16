@@ -315,7 +315,8 @@ static int init(void) {
     }
     
     syslog(LOG_INFO, "Checking presence and validity of required variables:");
-    
+
+    config_lookup_string(&config, "data_type", &common_data.dataType);
     validateConfigBool(&config, "sync_2way", &common_data.sync_2way, 0);
     
     validateConfigBool(&config, "diff_commands", &common_data.diff_commands, 0);
@@ -360,23 +361,6 @@ static int init(void) {
     
     
    /***************************************
-    * INITIALIZING DATA FUNCTIONS
-    ***************************************/
-    
-    conf_value = NULL;
-    config_lookup_string(&config, "data_type", &conf_value);
-    if(!(common_data.process = getProcessMethod(&conf_value))) {
-        syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", conf_value);
-        return EXIT_FAILURE;
-    }
-    else {
-        syslog(LOG_INFO, "[OK] data_type: %s", conf_value);
-    }
-    if(common_data.process->init() == EXIT_FAILURE)
-        return EXIT_FAILURE;
-    
-    
-   /***************************************
     * INITIALIZING INTERFACE FUNCTIONS
     ***************************************/
     
@@ -397,6 +381,21 @@ static int init(void) {
     ***************************************/
     
     if(initMixer() == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    
+    
+   /***************************************
+    * INITIALIZING DATA FUNCTIONS
+    ***************************************/
+    
+    if(!(common_data.process = getProcessMethod(&common_data.dataType))) {
+        syslog(LOG_ERR, "[Error] Setting 'data_type' is not recognised: %s", common_data.dataType);
+        return EXIT_FAILURE;
+    }
+    else {
+        syslog(LOG_INFO, "[OK] data_type: %s", conf_value);
+    }
+    if(common_data.process->init() == EXIT_FAILURE)
         return EXIT_FAILURE;
     
     
@@ -452,29 +451,29 @@ static void *queryStatus(void *arg) {
 static void terminate(int signum) {    
     /* Check if pthread_t has been initialized from default value and is still alive,
      * if so, cancel and join it. */
-    if(!pthread_equal(watchMixerThread, mainThread) && pthread_kill(watchMixerThread, 0) == 0) {
-        if(pthread_cancel(watchMixerThread) != 0)
+    if(!pthread_equal(watchMixerThread, mainThread)) {
+        if(pthread_kill(watchMixerThread, 0) == 0 && pthread_cancel(watchMixerThread) != 0)
             syslog(LOG_WARNING, "Unable request cancelation for mixer thread: %s", strerror(errno));
         if((errno = pthread_join(watchMixerThread, NULL)) != 0)
             syslog(LOG_WARNING, "Unable to join mixer thread: %s\n", strerror(errno));
     }
-    if(!pthread_equal(interfaceListenThread, mainThread) && pthread_kill(interfaceListenThread, 0) == 0) {
-        if(pthread_cancel(interfaceListenThread) != 0)
+    if(!pthread_equal(interfaceListenThread, mainThread)) {
+        if(pthread_kill(interfaceListenThread, 0) == 0 && pthread_cancel(interfaceListenThread) != 0)
             syslog(LOG_WARNING, "Unable request cancelation for serial thread: %s", strerror(errno));
         if((errno = pthread_join(interfaceListenThread, NULL)) != 0)
             syslog(LOG_WARNING, "Unable to join serial thread: %s\n", strerror(errno));
     }
-    if(!pthread_equal(statusQueryThread, mainThread) && pthread_kill(statusQueryThread, 0) == 0) {
-        if(pthread_cancel(statusQueryThread) != 0)
+    if(!pthread_equal(statusQueryThread, mainThread)) {
+        if(pthread_kill(statusQueryThread, 0) == 0 && pthread_cancel(statusQueryThread) != 0)
             syslog(LOG_WARNING, "Unable request cancelation for query thread: %s", strerror(errno));
         if((errno = pthread_join(statusQueryThread, NULL)) != 0)
             syslog(LOG_WARNING, "Unable to join query thread: %s\n", strerror(errno));
     }
     
-    if(common_data.interface)
-        common_data.interface->deinit();
     if(common_data.process)
         common_data.process->deinit();
+    if(common_data.interface)
+        common_data.interface->deinit();
     if(common_data.mod)
         common_data.mod->deinit();
     

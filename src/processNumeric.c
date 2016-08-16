@@ -34,6 +34,7 @@
 #include "common.h"
 #include "processData.h"
 #include "verifyConfig.h"
+#include "mimicAbsVol.h"
 
 
 typedef struct {
@@ -47,6 +48,7 @@ typedef struct {
     
     /* non-discrete volume control */
     int volumeMutationNegative, volumeMutationPositive;
+    uint8_t *volumeArrayNegative, *volumeArrayPositive;
 } dechex_data_t;
 
 static dechex_data_t dechex_data;
@@ -93,6 +95,8 @@ static int init(void) {
 
     dechex_data.serial_command[0] = NULL;
     dechex_data.serial_command[1] = NULL;
+    dechex_data.volumeArrayNegative = NULL;
+    dechex_data.volumeArrayPositive = NULL;
     dechex_data.statusQuery = NULL;
     
 // common_data.volume_min >= common_data.volume_max ||  -> Can occur, see Cambridge Audio ->  && |min < max|
@@ -119,11 +123,11 @@ static int init(void) {
         else
             dechex_data.tail_length[main_count] = config_setting_length(conf_setting);
         
-        dechex_data.serial_command[main_count] = calloc(dechex_data.header_length[main_count]+2+dechex_data.tail_length[main_count], sizeof(uint8_t*));
+        dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+2+dechex_data.tail_length[main_count];
+        dechex_data.serial_command[main_count] = calloc(dechex_data.serial_command_length[main_count], sizeof(uint8_t)); // why the *?
         dechex_data.event_header[main_count] = dechex_data.serial_command[main_count]+dechex_data.header_length[main_count];
         dechex_data.event[main_count] = dechex_data.event_header[main_count]+1;
         dechex_data.command_tail[main_count] = dechex_data.event[main_count]+1;
-        dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+2+dechex_data.tail_length[main_count];
         
         snprintf(config_query, CONFIG_QUERY_SIZE, "header.[%i]", main_count*common_data.diff_commands);
         for(count = 0; count < dechex_data.header_length[main_count]; count++) {
@@ -145,10 +149,29 @@ static int init(void) {
                 return EXIT_FAILURE;
         }
     }
-    
-    if(common_data.mod->command) {
-        if(common_data.mod->command->init(2, &dechex_data.alwaysMatchTail, &dechex_data.serial_command_length) == EXIT_FAILURE)
+
+    if(!common_data.discrete_volume) {    
+        if(validateConfigInt(&config, "volume.min", &dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
             return EXIT_FAILURE;
+        dechex_data.volumeArrayNegative = calloc(dechex_data.serial_command_length[0], sizeof(uint8_t));
+        *dechex_data.event_header[0] = dechex_data.volume_header[0];
+        *dechex_data.event[0] = dechex_data.volumeMutationNegative;
+        memcpy(dechex_data.volumeArrayNegative, dechex_data.serial_command[0], dechex_data.serial_command_length[0] * sizeof(uint8_t));
+        
+        if(validateConfigInt(&config, "volume.plus", &dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        dechex_data.volumeArrayPositive = calloc(dechex_data.serial_command_length[0], sizeof(uint8_t));
+        *dechex_data.event[0] = dechex_data.volumeMutationPositive;
+        memcpy(dechex_data.volumeArrayPositive, dechex_data.serial_command[0], dechex_data.serial_command_length[0] * sizeof(uint8_t));
+        
+        if(common_data.volumeMutationRange) {
+            if(validateConfigInt(&config, "volume.max", &common_data.volume_max, -1, 1, 
+            common_data.volumeMutationRange, common_data.volumeMutationRange) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        
+            if(mimicAbsVol.init((char *)dechex_data.volumeArrayNegative, (char *)dechex_data.volumeArrayPositive) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        }
     }
     
     if(common_data.send_query) {
@@ -161,14 +184,11 @@ static int init(void) {
         common_data.statusQuery = (const char *)dechex_data.statusQuery;
     }
     
-    if(!common_data.discrete_volume && validateConfigInt(&config, "volume.min", 
-    &dechex_data.volumeMutationNegative, -1, 0, 255, -1) == EXIT_FAILURE)
-        return EXIT_FAILURE;
-    if(!common_data.discrete_volume && validateConfigInt(&config, "volume.plus", 
-    &dechex_data.volumeMutationPositive, -1, 0, 255, -1) == EXIT_FAILURE)
-        return EXIT_FAILURE;
+    if(common_data.mod->command) {
+        if(common_data.mod->command->init(2, &dechex_data.alwaysMatchTail, &dechex_data.serial_command_length) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+    }
     
-
     return EXIT_SUCCESS;
 } /* end init() */
 
@@ -253,6 +273,13 @@ static int compileVolumeCommand(long *volumeInternal) {
         *dechex_data.event[0] = (int)volumeExternal;
         
         common_data.volume_level_status = volumeExternal;
+    }
+    else if(common_data.volumeMutationRange) {
+        double volumeExternal;
+        common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
+        mimicAbsVol.process(volumeExternal);
+        common_data.volume_level_status = volumeExternal;
+        return EXIT_FAILURE; // to prevent an attempt to access serial_command in calling function
     }
     else {
         if(common_data.volume_level_status == *volumeInternal) // to catch a reset of the volume level
@@ -514,12 +541,18 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
 } /* serial_strip_dechex */
 
 static void deinit(void) {
+    if(!common_data.discrete_volume && common_data.volumeMutationRange)
+        mimicAbsVol.deinit();
     if(dechex_data.serial_command[0] != NULL)
         free(dechex_data.serial_command[0]);
     if(dechex_data.serial_command[1] != NULL)
         free(dechex_data.serial_command[1]);
     if(dechex_data.statusQuery != NULL)
         free(dechex_data.statusQuery);
+    if(dechex_data.volumeArrayPositive != NULL)
+        free(dechex_data.volumeArrayPositive);
+    if(dechex_data.volumeArrayNegative != NULL)
+        free(dechex_data.volumeArrayNegative);
     if(common_data.mod->command != NULL)
         common_data.mod->command->deinit();
 }

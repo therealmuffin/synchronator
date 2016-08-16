@@ -16,15 +16,17 @@
     
         /* Options */
         int sync_2way, discrete_volume, diff_commands, send_query;
-    
+        const char *dataType;
+        
         /* Dynamic device mixer variables + backup of original */
         int volume_min, volume_max, initial_volume_min, initial_volume_max;
         /* Alsa mixer variables */
         long alsa_volume_min, alsa_volume_max, alsa_volume_range;
         
-        /* Status variable, external volume volume level if discrete, if relative internal 
+        /* Status variable, external volume volume level if (mimicked) discrete, if relative internal 
             volume level */
         double volume_level_status;
+        int volumeMutationRange;
         
         /* Multiplies non-discrete volume commands (not/partially implemented) */
         int nd_vol_multiplier;

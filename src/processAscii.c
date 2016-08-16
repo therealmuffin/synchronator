@@ -33,13 +33,14 @@
 #include "common.h"
 #include "processData.h"
 #include "verifyConfig.h"
+#include "mimicAbsVol.h"
 
 
 typedef struct {
     const char *command_header[2], *command_tail[2], *volume_header[2], *volume_tail[2], *event_delimiter[2];
     int volume_precision, volume_length, header_length[2], tail_length[2], event_delimiter_length[2];
     /* non-discrete volume control */
-    const char *volumeMutationNegative, *volumeMutationPositive;
+    char *volumeMutationNegative, *volumeMutationPositive;
     
     int allowRequests;
     const char *requestIndicator;
@@ -84,8 +85,10 @@ static int init(void) {
     int count;
     int main_count;
     int int_setting = -1;
-    ascii_data.volume_precision = 0;
-    ascii_data.allowRequests = 0;
+    char serial_command[200];
+    const char *char_setting = NULL;
+    ascii_data.volumeMutationNegative = NULL;
+    ascii_data.volumeMutationPositive = NULL;
     
     for(main_count = 0; main_count <= common_data.diff_commands; main_count++)
     {
@@ -95,7 +98,7 @@ static int init(void) {
         if(validateConfigString(&config, "tail", &ascii_data.command_tail[main_count], main_count) == EXIT_FAILURE)
             return EXIT_FAILURE;
             
-        if((ascii_data.tail_length[main_count] = strlen(ascii_data.command_tail[main_count])) < 1) {
+        if(common_data.sync_2way && (ascii_data.tail_length[main_count] = strlen(ascii_data.command_tail[main_count])) < 1) {
             syslog(LOG_ERR, "[Error] Setting 'tail' can not be empty");
             return EXIT_FAILURE;
         }
@@ -107,15 +110,41 @@ static int init(void) {
         if(validateConfigString(&config, "volume.tail", &ascii_data.volume_tail[main_count], main_count) == EXIT_FAILURE)
             return EXIT_FAILURE;
     }
-    if(common_data.discrete_volume && validateConfigInt(&config, "volume.precision", &ascii_data.volume_precision, -1, 0, 10, 0) == EXIT_FAILURE)
-        return EXIT_FAILURE;
-    if(common_data.discrete_volume && validateConfigInt(&config, "volume.length", &ascii_data.volume_length, -1, 0, 10, 0) == EXIT_FAILURE)
-        return EXIT_FAILURE;
-    if(common_data.discrete_volume && ascii_data.volume_precision) ascii_data.volume_length += ascii_data.volume_precision+1;
-    if(!common_data.discrete_volume && validateConfigString(&config, "volume.min", &ascii_data.volumeMutationNegative, -1) == EXIT_FAILURE)
-        return EXIT_FAILURE;
-    if(!common_data.discrete_volume && validateConfigString(&config, "volume.plus", &ascii_data.volumeMutationPositive, -1) == EXIT_FAILURE)
-        return EXIT_FAILURE;
+    if(common_data.discrete_volume) {
+        if(validateConfigInt(&config, "volume.precision", &ascii_data.volume_precision, -1, 0, 10, 0) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        if(validateConfigInt(&config, "volume.length", &ascii_data.volume_length, -1, 0, 10, 0) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        if(ascii_data.volume_precision) ascii_data.volume_length += ascii_data.volume_precision+1;
+    }
+    if(!common_data.discrete_volume) {
+        if(validateConfigString(&config, "volume.min", &char_setting, -1) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        snprintf(serial_command, 200, "%s%s%s%s%s%s", 
+            ascii_data.command_header[0], ascii_data.volume_header[0], 
+            ascii_data.event_delimiter[0], char_setting, 
+            ascii_data.volume_tail[0], ascii_data.command_tail[0]);
+        ascii_data.volumeMutationNegative = calloc(strlen(serial_command)+1, sizeof(char));
+        strcpy(ascii_data.volumeMutationNegative, serial_command);
+            
+        if(validateConfigString(&config, "volume.plus", &char_setting, -1) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+        snprintf(serial_command, 200, "%s%s%s%s%s%s", 
+            ascii_data.command_header[0], ascii_data.volume_header[0], 
+            ascii_data.event_delimiter[0], char_setting, 
+            ascii_data.volume_tail[0], ascii_data.command_tail[0]);
+        ascii_data.volumeMutationPositive = calloc(strlen(serial_command)+1, sizeof(char));
+        strcpy(ascii_data.volumeMutationPositive, serial_command);
+        
+        if(common_data.volumeMutationRange) {
+            if(validateConfigInt(&config, "volume.max", &common_data.volume_max, -1, 1, 
+            common_data.volumeMutationRange, common_data.volumeMutationRange) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        
+            if(mimicAbsVol.init(ascii_data.volumeMutationNegative, ascii_data.volumeMutationPositive) == EXIT_FAILURE)
+                return EXIT_FAILURE;
+        }
+    }
     if(common_data.send_query && validateConfigString(&config, "query.trigger.[0]", &common_data.statusQuery, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
         if(common_data.send_query) common_data.statusQueryLength = strlen(common_data.statusQuery);
@@ -123,7 +152,9 @@ static int init(void) {
     if(config_lookup_string(&config, "response.indicator", &ascii_data.requestIndicator)) {
         ascii_data.allowRequests = 1;
         syslog(LOG_INFO, "[OK] response.indicator: %s", ascii_data.requestIndicator);
-    }
+    } 
+    else
+        ascii_data.allowRequests = 0;
     
     if(common_data.mod->command) {
         if(common_data.mod->command->init(0) == EXIT_FAILURE)
@@ -141,7 +172,7 @@ static int sendVolumeCommand(long *volumeInternal) {
     
 #ifdef TIME_DEFINED_TIMEOUT
     int timeout;
-    clock_gettime(CLOCK_MONOTONIC , &timestampCurrent);
+    clock_gettime(CLOCK_MONOTONIC , &timestampCurrent); // somewhat inaccurate since beginning or end of second. Anyways, at least it's monotonic
     if((timeout = timestampCurrent.tv_sec - common_data.timestampLastRX.tv_sec) <= DEFAULT_PROCESS_TIMEOUT_OUT) {
         syslog(LOG_DEBUG, "Outgoing volume level processing timeout (completed): %i/%i", timeout, DEFAULT_PROCESS_TIMEOUT_OUT);
 #else
@@ -224,21 +255,21 @@ static int compileVolumeCommand(long *volumeInternal, char serial_command[200]) 
             
         common_data.volume_level_status = volumeExternal;
     }
+    else if(common_data.volumeMutationRange) {
+        double volumeExternal;
+        common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
+        mimicAbsVol.process(volumeExternal);
+        common_data.volume_level_status = volumeExternal;
+        return EXIT_FAILURE; // to prevent an attempt to serial_command in calling function
+    }
     else {
         if(common_data.volume_level_status == *volumeInternal)
             return EXIT_FAILURE;
         
-        const char* volumeMutation;
-        
         if(*volumeInternal > common_data.volume_level_status)
-            volumeMutation = ascii_data.volumeMutationPositive;
+            strcpy(serial_command, ascii_data.volumeMutationPositive);
         else
-            volumeMutation = ascii_data.volumeMutationNegative;
-        
-        snprintf(serial_command, 200, "%s%s%s%s%s%s", 
-            ascii_data.command_header[0], ascii_data.volume_header[0], 
-            ascii_data.event_delimiter[0], volumeMutation, 
-            ascii_data.volume_tail[0], ascii_data.command_tail[0]);
+            strcpy(serial_command, ascii_data.volumeMutationNegative);
         
         if(*volumeInternal < 25 || *volumeInternal > 75) {
             int status = -1;
@@ -540,4 +571,11 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
 static void deinit(void) {
     if(common_data.mod->command != NULL)
         common_data.mod->command->deinit();
+    if(!common_data.discrete_volume && common_data.volumeMutationRange)
+        mimicAbsVol.deinit();
+        
+    if(ascii_data.volumeMutationNegative != NULL)
+        free(ascii_data.volumeMutationNegative);
+    if(ascii_data.volumeMutationPositive != NULL)
+        free(ascii_data.volumeMutationPositive);
 }
