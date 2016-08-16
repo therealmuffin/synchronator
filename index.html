@@ -24,14 +24,16 @@
 
 <p>Synchronator brings bit perfect volume control to Hi-Fi systems with Linux as source. </p>
 
-<p>This enables control of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, MPD application, or Roon a.o.</p>
+<p>This enables control of your Hi-Fi amplifier volume level for Airplay, DLNA, OpenHome, MPD, Squeezelite, and Roon a.o.</p>
 
 <h2>
 <a id="technical-background" class="anchor" href="#technical-background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Technical background</h2>
 
-<p>Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard*, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP). In addition, changes in volume level at the amplifier side are synced back.</p>
+<p>Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard<em>, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP/IR)</em>*. In addition, changes in volume level at the amplifier side are synced back.</p>
 
 <p>*) For Roon and the like a dummy mixer is created for the actual audio device/dac instead.</p>
+
+<p>**) Support for IR control (via LIRC) is experimental. Tester(s) is (are) needed.</p>
 
 <h2>
 <a id="requirements-for-audio-applications" class="anchor" href="#requirements-for-audio-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirements for audio applications</h2>
@@ -42,11 +44,19 @@
 <a id="known-supported-applications" class="anchor" href="#known-supported-applications" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known supported applications</h3>
 
 <ul>
-<li>Music Player Daemon (MPD)</li>
-<li>UPMPD (DLNA/OpenHome)</li>
-<li>Roon (RoonBridge, RoonServer)</li>
-<li>Shairport and derivatives (Airplay)</li>
-<li>Kodi (XBMC) (requires small change in sourcecode)</li>
+<li><a href="https://www.musicpd.org/">Music Player Daemon (MPD)</a></li>
+<li>
+<a href="http://www.lesbonscomptes.com/upmpdcli/">UPMPD</a> (DLNA/OpenHome)</li>
+<li>
+<a href="https://roonlabs.com/">Roon</a> (RoonBridge, RoonServer)</li>
+<li>
+<a href="https://github.com/abrasive/shairport">Shairport</a> and <a href="https://github.com/mikebrady/shairport-sync/">derivatives</a> (Airplay)</li>
+<li>
+<a href="https://github.com/ralph-irving/squeezelite">Squeezelite</a> <a href="https://github.com/therealmuffin/squeezelite">(required patch pending for approval)</a>
+</li>
+<li><a href="https://www.mopidy.com/">Mopidy</a></li>
+<li>
+<a href="https://kodi.tv/">Kodi</a> (XBMC) (requires small change in sourcecode)</li>
 </ul>
 
 <h2>
@@ -54,7 +64,7 @@
 
 <p>Obviously, for a computer to control an amplifier that amplifier needs to be controllable. Many amplifiers are controllable via a serial connection (e.g. RS232, TTL, etc). </p>
 
-<p>Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this moment I2C devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.</p>
+<p>Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. IR support is experimental. At this moment I2C and IR devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.</p>
 
 <h3>
 <a id="known-supported-amplifiersbrands" class="anchor" href="#known-supported-amplifiersbrands" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Known supported amplifiers/brands</h3>
@@ -77,6 +87,7 @@
 
 <ul>
 <li>Synchronisation of volume level changes between Linux and Hi-Fi amplifier</li>
+<li>Enable absolute volume control for amplifiers with relative volume control only</li>
 <li>HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)</li>
 <li>Replying to requests (e.g. status input, power, etc)</li>
 </ul>
@@ -94,11 +105,11 @@
 <h2>
 <a id="installation-and-configuration" class="anchor" href="#installation-and-configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation and configuration</h2>
 
-<p>For installation check the <a href="https://github.com/therealmuffin/synchronator/blob/master/INSTALL_MANUAL.md">installation manual</a> or the <a href="https://github.com/therealmuffin/synchronator/blob/master/INSTALL_MANUAL_EXT.md">extended installation manual</a></p>
+<p>For installation check the <a href="INSTALL_MANUAL.md">installation manual</a> or the <a href="INSTALL_MANUAL_EXT.md">extended installation manual</a></p>
 
-<p>For setting the appropriate configuration settings check the <a href="https://github.com/therealmuffin/synchronator/blob/master/CONFIG_MANUAL.md">configuration manual</a></p>
+<p>For setting the appropriate configuration settings check the <a href="CONFIG_MANUAL.md">configuration manual</a></p>
 
-<p>For using Synchronator in combination with Roon, check the <a href="https://github.com/therealmuffin/synchronator/blob/master/INSTALL_ROON.md">Roon configuration manual</a>.</p>
+<p>For using Synchronator in combination with Roon, check the <a href="INSTALL_ROON.md">Roon configuration manual</a>.</p>
 
 <h2>
 <a id="downloads" class="anchor" href="#downloads" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Downloads</h2>
