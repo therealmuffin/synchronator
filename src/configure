@@ -23,6 +23,7 @@ displayhelp()
     echo "    --disable-serial      Disables serial support"
     echo "    --enable-i2c          Enables I2C support (beta)"
     echo "    --enable-tcp          Enables TCP support (beta)"
+    echo "    --enable-lirc         Enables LIRC support (beta)"
     echo "*) if no output device is set configure will fail"
     echo ""
     echo "Misc options:"
@@ -134,6 +135,14 @@ process_arguments()
             --enable-tcp )
                     echo "#define ENABLE_TCP" >> config.h
                     echo "ENABLE_TCP=yes" >> config.mk
+                    output_devices=$((output_devices+1))
+                shift
+            ;;
+            --enable-lirc )
+                    check_header lirc/lirc_client.h
+                    echo "#define ENABLE_LIRC" >> config.h
+                    echo "ENABLE_LIRC=yes" >> config.mk
+                    LDFLAGS="${LDFLAGS} -llirc_client"
                     output_devices=$((output_devices+1))
                 shift
             ;;

@@ -31,6 +31,9 @@ extern interface_t interface_i2c;
 #ifdef ENABLE_TCP
 extern interface_t interface_tcp;
 #endif
+#ifdef ENABLE_LIRC
+extern interface_t interface_lirc;
+#endif
 
 
 static interface_t *list_interfaces[] = {
@@ -42,6 +45,9 @@ static interface_t *list_interfaces[] = {
 #endif
 #ifdef ENABLE_TCP
     &interface_tcp,
+#endif
+#ifdef ENABLE_LIRC
+    &interface_lirc,
 #endif
     NULL
 };

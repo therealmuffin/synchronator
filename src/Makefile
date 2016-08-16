@@ -30,6 +30,11 @@ SRCS += interfaceTCP.c
 output_devices=$((output_devices+1))
 endif
 
+ifdef ENABLE_LIRC
+SRCS += interfaceLIRC.c
+output_devices=$((output_devices+1))
+endif
+
 ifndef DISABLE_MSQ
 SRCS += messageQueue.c
 DEPS += messageQueue.h

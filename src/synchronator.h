@@ -33,6 +33,12 @@
         #define USAGE_TCP
     #endif // #ifdef ENABLE_TCP
     
+    #ifdef ENABLE_LIRC
+        #define USAGE_LIRC " LIRC interface (experimental)\n"
+    #else
+        #define USAGE_LIRC
+    #endif // #ifdef ENABLE_LIRC
+    
     #ifndef DISABLE_MSQ
         #define USAGE_MSQ " Message Queue (basic local control)\n"
     #else
@@ -76,7 +82,7 @@
     "   primary     "CONFIG_LOCATION1"\n" \
     "   secondary   "CONFIG_LOCATION2"\n" \
     "\n" \
-    "Synchronator is compiled with support for:\n" USAGE_SERIAL USAGE_I2C USAGE_TCP USAGE_MSQ
+    "Synchronator is compiled with support for:\n" USAGE_SERIAL USAGE_I2C USAGE_TCP USAGE_LIRC USAGE_MSQ
 
     #define CONFIG_QUERY_SIZE 100
     #define SERIAL_READ_BUFFER 100
