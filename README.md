@@ -2,32 +2,35 @@
 
 Synchronator brings bit perfect volume control to Hi-Fi systems with Linux as source. 
 
-This enables control of your Hi-Fi amplifier volume level from within any Airplay, DLNA, OpenHome, MPD application, or Roon a.o.
+This enables control of your Hi-Fi amplifier volume level for Airplay, DLNA, OpenHome, MPD, Squeezelite, and Roon a.o.
 
 
 ## Technical background
 
-Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard*, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP). In addition, changes in volume level at the amplifier side are synced back.
+Contrary to many other operating systems in Linux it is not uncommon that audio applications, such as MPD and Shairport, allow audio data and mixer/volume data to be send to different (audio) devices. By sending mixer data to a dummy/virtual soundcard*, volume control can be enabled without touching the audio data. Synchronator in turn can synchronise that volume level with any Hi-Fi system/amplifier that can be externally controlled (RS232/I2C/TCP/IR)**. In addition, changes in volume level at the amplifier side are synced back.
 
 *) For Roon and the like a dummy mixer is created for the actual audio device/dac instead.
+**) Support for IR control (via LIRC) is experimental. Tester(s) is (are) needed.
 
 ## Requirements for audio applications
 
 The only requirement for audio applications is that it allows Linux (Alsa) to take care of volume instead of some internal algorithm.
 
 ### Known supported applications
-- Music Player Daemon (MPD)
-- UPMPD (DLNA/OpenHome)
-- Roon (RoonBridge, RoonServer)
-- Shairport and derivatives (Airplay)
-- Kodi (XBMC) (requires small change in sourcecode)
+- [Music Player Daemon (MPD)](https://www.musicpd.org/)
+- [UPMPD](http://www.lesbonscomptes.com/upmpdcli/) (DLNA/OpenHome)
+- [Roon](https://roonlabs.com/) (RoonBridge, RoonServer)
+- [Shairport](https://github.com/abrasive/shairport) and [derivatives](https://github.com/mikebrady/shairport-sync/) (Airplay)
+- [Squeezelite](https://github.com/ralph-irving/squeezelite) [(required patch pending for approval)](https://github.com/therealmuffin/squeezelite)
+- [Mopidy](https://www.mopidy.com/)
+- [Kodi](https://kodi.tv/) (XBMC) (requires small change in sourcecode)
 
 
 ## Requirements for Hi-Fi amplifiers
 
 Obviously, for a computer to control an amplifier that amplifier needs to be controllable. Many amplifiers are controllable via a serial connection (e.g. RS232, TTL, etc). 
 
-Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this moment I2C devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.
+Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. IR support is experimental. At this moment I2C and IR devices can only be controlled, changes at that end will not be synced back to Synchronator. If there is any use for this functionality (I didn't find any): post a request.
 
 ### Known supported amplifiers/brands
 - Cambridge Audio
@@ -45,6 +48,7 @@ Synchronator supports serial (RS232, TTL, etc), TCP and I2C connections. At this
 ## Features summary
 
 - Synchronisation of volume level changes between Linux and Hi-Fi amplifier
+- Enable absolute volume control for amplifiers with relative volume control only
 - HTTP/PHP interface for controlling miscellaneous amplifier options (power, input, etc)
 - Replying to requests (e.g. status input, power, etc)
 

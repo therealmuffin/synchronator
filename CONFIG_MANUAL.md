@@ -52,6 +52,15 @@ tcp_max - maximum of incoming connections [1-100|10`*`]
 tcp_echo - return an echo of incoming data [TRUE|FALSE`*`]
 
 
+### LIRC specific options (experimental)
+
+lirc_socket - location of LIRC socket
+
+remote_name - name of remote as set in LIRC configuration
+
+This interface only functions with 'data_type' set to 'ascii'. The resulting output send to this interface must correspond with the key names as configured in LIRC. 2way synchronisation is not implemented (how could it?).
+
+
 ### ALSA options
 
 The following options are only necessary if Synchronator is used in combination with Roon or if multiples zones (and therefore multiple instances of Synchronator) run on the same computer.
@@ -96,7 +105,19 @@ header - prefix added to every volume command code (thus post the header defined
 
 curve - Volume curve can be linear or logarithmic. If volume control is relative, only linear is allowed [linear`*`|log]
 
-###### [response volume sub-section]
+###### additional non-discrete specific options
+
+Synchronator can mimic discrete volume control for non-discrete controlable amplifiers. To activate this functionality, the option 'range' needs to be set. To sync Synchronator's volume level with that of the amplifier, volume level is set to zero at initialisation. Sample configuration files that have this functionality enabled have a suffix of MAVC (Mimic Absolute Volume Control).
+
+range - number of steps to go from zero to maximum volume (may be higher than the actual value, not lower as that would render the initialisation process ineffective)
+
+max - limits the maximum volume level to a value below that set in range [x < range|range`*`]
+
+timeout - sets a timeout in milliseconds between each volume command set to prevent dataloss due to an overload of data sent to the amplifier [0`*`]
+
+double_zero_interval - Synchronator relies for this functionality on its ability to keep track of the current volume level. This process can be disrupted by user intervention at the amplifier end. By moving volume twice to zero within the set interval (in seconds),  Synchronator reinitialises its volume level. Setting this value to zero, enables initialization everytime volume level reaches zero [2`*`]
+
+###### response volume sub-section
 
 The following settings allow translation of the incoming volume range to the outgoing volume range (if different). Additional types can easily be created in C if necessary.
 
