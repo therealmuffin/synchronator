@@ -10,7 +10,7 @@
 - If the amplifier has an RS232 connection: simply, take the appropriate cable and hook it up.
 - For TTL signals: Soekris and some ALIX boards have a TTL output. Otherwise see below.
 - For inverted TTL signals (e.g. Leema): use a RS232 to INV-TTL board.
-I've used: https://secure.robotshop.com/eu/droids-db9-serial-adapter-5.html
+I've used: http://www.robotshop.com/eu/en/droids-db9-serial-adapter.html
 - It can convert RS232 to TTL and TX to INV-TTL. for RX you can take on of the RS232 header, that should work fine.
 
 ## Installation (in a nutshell):
