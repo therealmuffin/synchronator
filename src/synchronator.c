@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
         
     /* Lock process and print pid to lock file */
     if((lock_file = open(LOCKFILE, O_RDWR|O_CREAT|O_CLOEXEC, LOCKMODE)) < 0) {
-        syslog(LOG_ERR, "Failed to open lock file: %s", strerror(errno));
+        syslog(LOG_ERR, "Failed to open lock file: %s (%s)", LOCKFILE, strerror(errno));
         closelog();
         exit(EXIT_FAILURE);
     }
