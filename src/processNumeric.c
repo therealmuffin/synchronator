@@ -415,7 +415,7 @@ static int processCommand(void *category_lookup, void *action_lookup) {
         !config_setting_lookup_bool(config_child, "register", &int_setting) || int_setting == 0 ||
         !(config_entry = config_setting_get_member(config_child, "header")) || 
         (int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 || 
-        int_setting != *(int *)category_lookup)
+        int_setting != *(uint8_t *)category_lookup)
             continue;
         
         current_header = config_setting_name(config_child);
@@ -424,7 +424,7 @@ static int processCommand(void *category_lookup, void *action_lookup) {
         for(entry_count = 0; entry_count < total_child_entries; entry_count++) {
             config_entry = config_setting_get_elem(config_child, entry_count);
             if((int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 || 
-            int_setting != *(int *)action_lookup)
+            int_setting != *(uint8_t *)action_lookup)
                 continue;
             
             snprintf(status_file_path, MAX_PATH_LENGTH, "%s/%s.%s", TEMPLOCATION, PROGRAM_NAME, current_header);
@@ -529,7 +529,7 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
                 status = common_data.volume->process(&volume_level);
             }
             else
-                status = processCommand((int *)dechex_data.event_header[1], (int *)dechex_data.event[1]);
+                status = processCommand(dechex_data.event_header[1], dechex_data.event[1]);
             
             if(status == EXIT_FAILURE) {
                 pthread_kill(mainThread, SIGTERM);
