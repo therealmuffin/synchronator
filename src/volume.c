@@ -109,6 +109,9 @@ static int initVolume(void) {
     if(common_data.discrete_volume && validateConfigInt(&config, "volume.max", 
     &common_data.volume_max, -1, 0, 0, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
+    if(validateConfigInt(&config, "volume.default", &common_data.defaultExternalVolume, -1, 
+    common_data.volume_min, common_data.volume_max, -2) == EXIT_FAILURE)
+        common_data.defaultExternalVolume = common_data.volume_min-1;
     
     if(common_data.mod->volumeResponse) {
         if(common_data.mod->volumeResponse->init() == EXIT_FAILURE)

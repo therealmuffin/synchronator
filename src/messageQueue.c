@@ -109,6 +109,9 @@ int watchMsQ(void) {
             if(common_data.process->compileVolumeCommand(&input_volume) == EXIT_FAILURE)
                 raise(SIGTERM);
         }
+        else if(strcmp(input_command, "reinit") == 0) {
+            common_data.reinitVolume();
+        }
         else            
             if(common_data.process->compileDeviceCommand(input_command, input_value) == EXIT_FAILURE)
                 raise(SIGTERM);

@@ -29,10 +29,12 @@
 #endif
 #include "synchronator.h"
 #include "common.h"
+#include "mixer.h"
 #include "mimicAbsVol.h"
 
 // create files volumeProcessLinear.c, volumeProcess
 static int init(char *volMin, char *volPlus);
+static int reinit(void);
 static int process(double volumeExternal);
 static void deinit(void);
 static void *setExternalVolume(void *unused);
@@ -67,6 +69,8 @@ static sigset_t thread_sigmask;
     static struct timespec timestampCurrent;
 #endif
 static int resetInProgress;
+static int reinitInProgress;
+static double defaultVolume;
 static int actualExternalVolume;
 static int requestedExternalVolume;
 
@@ -76,8 +80,9 @@ static int init(char *volMin, char *volPlus) { // timeout in milliseconds
     localSettings.volMinLen = strlen(localSettings.volMin);
     localSettings.volPlusLen = strlen(localSettings.volPlus);
     timestampLastMute = (struct timespec) { 0, 0 };
+    common_data.reinitVolume = &reinit;
     
-    resetInProgress = 0;
+    resetInProgress = reinitInProgress = 0;
     int tempInt;
     
     validateConfigInt(&config, "volume.double_zero_interval", &localSettings.resetInterval, -1, 0, 30, 2);
@@ -109,7 +114,30 @@ static int init(char *volMin, char *volPlus) { // timeout in milliseconds
 }
 
 static int reinit(void) {
-    resetVolume();
+    reinitInProgress = resetInProgress = 1;
+    pthread_cancel(setExternalVolumeThread);
+    syslog(LOG_DEBUG, "Initiating volume reinitialisation");
+    int status;
+    
+    if(common_data.defaultExternalVolume >= common_data.initial_volume_min) {
+        defaultVolume = common_data.defaultExternalVolume;
+        common_data.volume->convertExternal2Mixer(&defaultVolume);
+    }
+    
+    if(!pthread_equal(setExternalVolumeThread, thisThread) && 
+    pthread_kill(setExternalVolumeThread, 0) == 0 && !resetInProgress)
+        return EXIT_SUCCESS;
+        
+    if(!pthread_equal(setExternalVolumeThread, thisThread) && 
+    (errno = pthread_join(setExternalVolumeThread, NULL)) != 0)
+        syslog(LOG_WARNING, "Unable to join mimicAbsVol thread: %s\n", strerror(errno));
+    
+    if(status = pthread_create(&setExternalVolumeThread, &thread_attr, setExternalVolume, NULL)) {
+        pthread_attr_destroy(&thread_attr);
+        syslog(LOG_ERR, "Failed to open mimicAbsVol thread: %i", status);
+        pthread_kill(mainThread, SIGTERM);
+        pause();
+    }
 }
 
 static int resetVolume(void) {
@@ -135,6 +163,11 @@ static int resetVolume(void) {
     common_data.volume_level_status = actualExternalVolume = 0;
     resetInProgress = 0;
     
+    if(reinitInProgress && common_data.defaultExternalVolume >= common_data.initial_volume_min) {
+        setMixer((int)defaultVolume) == EXIT_FAILURE;
+        reinitInProgress = 0;
+    }
+        
     return EXIT_SUCCESS;
 }
 
@@ -184,7 +217,7 @@ static void *setExternalVolume(void *unused) {
     }
     
     if(resetInProgress == 1)
-        reinit();
+        resetVolume();
     
     while(actualExternalVolume != requestedExternalVolume) {
         if(actualExternalVolume > requestedExternalVolume) {

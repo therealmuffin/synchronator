@@ -19,9 +19,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <syslog.h>
 
 #include "processData.h"
+#include "common.h"
 
 
 /***********************************
@@ -56,6 +58,7 @@ process_method_t *getProcessMethod(const char **name) {
 **********************************/
 
 static int updateStatus(const char *name, const char *value);
+static int processStatus(const char *name, const char *value);
 static void retrieveStatus(const char *name, const char **value);
 static void deinitStatus(void);
 
@@ -65,14 +68,29 @@ struct status_t {
     struct status_t *nextStatus;
 };
 typedef struct status_t status_t;
-
+ // statusManager
 statusInfo_t statusInfo = {
-    .update = &updateStatus,
+    .update = &processStatus,
     .retrieve = &retrieveStatus,
     .deinit = &deinitStatus
 };
 
 static status_t *statusRoot = NULL;
+
+static int processStatus(const char *name, const char *value) {
+    const char *storedValue;
+    if(strcmp(name, "power") == 0 && strcmp(value, "deviceon") == 0) {
+        retrieveStatus(name, &storedValue);
+        if(storedValue != value) {
+            sleep(1); // to allow the amp to wake up 
+            common_data.reinitVolume();
+        }
+    }
+    
+    updateStatus(name, value);
+
+    return EXIT_SUCCESS;
+}
 
 static int updateStatus(const char *name, const char *value) {
     status_t *statusCurrent = statusRoot;

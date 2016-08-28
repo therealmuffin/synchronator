@@ -80,6 +80,7 @@ sync_2way - specifies whether to listen to incoming commands from the serial por
 
 diff_commands - specifies whether to use different commands for listening and sending commands [TRUE|FALSE`*`]
 
+[comment]: function under consideration:  powerup_time - specifies the time it takes after a device-on event to properly process commands (from a previous device-off state). Currently this is only used for specific 'device-on' actions, thus default volume level at start [0-9|1`*`].
 
 ### Main section settings
 
@@ -101,6 +102,8 @@ discrete - specifies whether to use absolute (TRUE) or relative (FALSE) volume l
 - discrete volume levels use 'min' and 'max' to set volume level boundaries
 - non-discrete volume levels use 'min' and 'plus' to specify command for adjusting relative volume levels
 
+default -  default volume level when a 'deviceon' command is detected from a previous 'deviceoff' state. In such event, Synchronator will pauze for one second to allow to the target device to settle before sending any commands. The volume scale of the amplifier is used for this function and works only if Synchronator is in discrete mode or if it mimics this mode (see section below). In the latter case, a volume scale of 0-100 is used. If set, this function can also be triggered by sending the message 'reinit=volume' over via the message queue (see an example of this in the scripts folder). By default this function is not enabled.
+
 header - prefix added to every volume command code (thus post the header defined in the main section)
 
 curve - Volume curve can be linear or logarithmic. If volume control is relative, only linear is allowed [linear`*`|log]
@@ -112,6 +115,8 @@ Synchronator can mimic discrete volume control for non-discrete controlable ampl
 range - number of steps to go from zero to maximum volume (may be higher than the actual value, not lower as that would render the initialisation process ineffective)
 
 max - limits the maximum volume level to a value below that set in range [x < range|range`*`]
+
+default - in addition to the description above, in this mode this function also triggers a volume reinitialisation.
 
 timeout - sets a timeout in milliseconds between each volume command set to prevent dataloss due to an overload of data sent to the amplifier [0`*`]
 
@@ -163,7 +168,7 @@ This mod standardises incoming volume data, e.g. MV085 to MV08. Otherwise, Synch
 
 #####[query section]
 
-Some amplifiers do not give automatic status updates. By setting a trigger and an appropriate interval (sec, 0 is only once at startup), a request for a status update can be issued through the interface port.
+Some amplifiers do not give automatic status updates. By setting a trigger and an appropriate interval (sec, 0 is only once at startup), a request for a status update can be issued through the interface port. This can also be used to set some default values at start of Synchronator (e.g. volume/input).
 
 
 #####[other sections]

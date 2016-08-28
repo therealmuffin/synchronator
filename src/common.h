@@ -47,6 +47,8 @@
         interface_t *interface;
         volume_functions_t *volume;
         mods_t *mod;
+        int (*reinitVolume)(void);
+        int defaultExternalVolume;
     } common_data_t;
 
     extern common_data_t common_data;

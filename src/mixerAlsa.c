@@ -26,11 +26,14 @@
 #include "common.h"
 #include "mixer.h"
 
+
+static int reinit(void);
+
 static snd_mixer_t *snd_handle = NULL;
 static snd_mixer_elem_t *snd_elem = NULL;
 
 int initMixer(void) {
-
+    common_data.reinitVolume = &reinit;
     snd_mixer_selem_id_t* snd_sid;
     snd_mixer_selem_id_alloca(&snd_sid);
 
@@ -86,6 +89,17 @@ int initMixer(void) {
     common_data.alsa_volume_range = common_data.alsa_volume_max - common_data.alsa_volume_min;
     syslog(LOG_DEBUG, "Alsa volume range, min, max: %i, %i, %i", common_data.alsa_volume_range, 
         common_data.alsa_volume_min, common_data.alsa_volume_max);
+    
+    return EXIT_SUCCESS;
+}
+
+static int reinit(void) {
+    if(common_data.defaultExternalVolume < common_data.initial_volume_min)
+        return EXIT_SUCCESS;
+    
+    double defaultVolume = common_data.defaultExternalVolume;
+    common_data.volume->convertExternal2Mixer(&defaultVolume);
+    setMixer((int)defaultVolume);
     
     return EXIT_SUCCESS;
 }
