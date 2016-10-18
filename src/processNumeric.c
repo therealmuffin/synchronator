@@ -124,7 +124,7 @@ static int init(void) {
             dechex_data.tail_length[main_count] = config_setting_length(conf_setting);
         
         dechex_data.serial_command_length[main_count] = dechex_data.header_length[main_count]+2+dechex_data.tail_length[main_count];
-        dechex_data.serial_command[main_count] = calloc(dechex_data.serial_command_length[main_count], sizeof(uint8_t)); // why the *?
+        dechex_data.serial_command[main_count] = calloc(dechex_data.serial_command_length[main_count], sizeof(int)); // uint8_t seems to cause memory to corrupt in 32bit, not 64bit
         dechex_data.event_header[main_count] = dechex_data.serial_command[main_count]+dechex_data.header_length[main_count];
         dechex_data.event[main_count] = dechex_data.event_header[main_count]+1;
         dechex_data.command_tail[main_count] = dechex_data.event[main_count]+1;
