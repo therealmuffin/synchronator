@@ -47,9 +47,13 @@ tcp_slave - don't initiate connect to address [TRUE|FALSE`*`]
 
 tcp_listen - allow incoming connections [TRUE|FALSE`*`]
 
+tcp_send_all - send all data to all open connections except for specific requests [TRUE|FALSE`*`]
+
 tcp_max - maximum of incoming connections [1-100|10`*`]
 
 tcp_echo - return an echo of incoming data [TRUE|FALSE`*`]
+
+tcp_persistent - persist in trying to recover a broken connection to defined tcp_address/port [TRUE`*`|FALSE]
 
 
 ### LIRC specific options (experimental)

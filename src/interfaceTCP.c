@@ -29,6 +29,7 @@
 /* TCP/IP interface */
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -45,6 +46,7 @@ static int deinit(void);
 static int sendDummy(const void *message, size_t messageLength);
 static int sendTCP2InterfaceFD(const void *message, size_t messageLength);
 static int replyTCP(const void *message, size_t messageLength);
+static int sendAll(const void *message, size_t messageLength);
 static int sendTCP(const void *message, size_t messageLength, int *address);
 static void *listenTCP(void *arg);
 
@@ -62,11 +64,14 @@ interface_t interface_tcp = {
 static pthread_mutex_t interfaceLock;
 struct addrinfo *addrinfoResults, *addresInfo;
 static int interfaceFD = -1, listenFD = -1, currentFD = -1;
+static int persistent;
 static int maxFD = 0;
 static int maxConnections, listenTarget;
 static int totalConnections = 0;
 static int echoRx = 0;
 static fd_set masterFDSet;
+static int requestReconnect = 0;
+static int sync_2way;
     
 // get sockaddr, IPv4 or IPv6:
 static void *get_in_addr(struct sockaddr *sa) {
@@ -89,7 +94,11 @@ static int init(void) {
     
     validateConfigBool(&config, "tcp_slave", &temp, 0); // set interface_tcp.send to dummy if true?
     if(!temp) {
-        if(initConnect() == EXIT_FAILURE)
+        validateConfigBool(&config, "tcp_persistent", &persistent, 1);
+        while((status = initConnect()) == 999 && persistent == 1) {
+            sleep(5);
+        }
+        if(status != EXIT_SUCCESS)
             return EXIT_FAILURE;
     }
     else
@@ -98,7 +107,7 @@ static int init(void) {
     validateConfigBool(&config, "tcp_listen", &temp, 0);
     if(temp)
         if(initBind() == EXIT_FAILURE)
-            return EXIT_FAILURE;    
+            return EXIT_FAILURE;
     
     if(listenFD == -1 && interfaceFD == -1) {
         syslog(LOG_ERR, "Can not be slave without listening: disable tcp_slave or enable tcp_listen");
@@ -106,12 +115,42 @@ static int init(void) {
     }
     
     validateConfigBool(&config, "tcp_echo", &echoRx, 0); // echo input
+    validateConfigBool(&config, "tcp_send_all", &temp, 0);
+    if(temp)
+        interface_tcp.send = &sendAll;
+    
+    
+    if(!common_data.sync_2way) { // to detect dropped connection safely in threads
+        common_data.sync_2way = 1;
+        sync_2way = 0;
+    }
+        
     
     if((status = pthread_mutex_init(&interfaceLock, NULL)) != 0) {
         syslog(LOG_ERR, "Failed to create interface mutex: %i", status);
         return EXIT_FAILURE;
     }
     
+    return EXIT_SUCCESS;
+}
+
+static int setKeepAlive(void) {
+    int optval = 1; // BOOL TRUE
+    socklen_t optlen = sizeof(optval);
+    if(setsockopt(interfaceFD, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) == -1) {
+        syslog(LOG_ERR, "Failed to set keepalive: %s", strerror(errno));
+        return EXIT_FAILURE;
+    }
+    optval = 120; // seconds idle before keepalive – https://linux.die.net/man/7/tcp
+    if(setsockopt(interfaceFD, IPPROTO_TCP, TCP_KEEPIDLE, &optval, optlen) == -1) {
+        syslog(LOG_ERR, "Failed to set keepidle: %s", strerror(errno));
+        return EXIT_FAILURE;
+    }
+    optval = 4; // retries before reconnect attempt
+    if(setsockopt(interfaceFD, IPPROTO_TCP, TCP_KEEPCNT, &optval, optlen) == -1) {
+        syslog(LOG_ERR, "Failed to set keepidle: %s", strerror(errno));
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
 
@@ -135,7 +174,7 @@ static int initConnect(void) {
 
     if((status = getaddrinfo(tcpIP, tcpPortChar, &addrinfoHints, &addrinfoResults)) != 0) {
         syslog(LOG_ERR, "Failed to get IP info: %s", gai_strerror(status));
-        return EXIT_FAILURE;
+        return 999;
     }
     
     // loop through all the results and connect to the first we can
@@ -155,8 +194,11 @@ static int initConnect(void) {
 
     if (addresInfo == NULL) {
         syslog(LOG_ERR, "Failed to connect socket");
+        return 999;
+    }
+    
+    if(setKeepAlive() == EXIT_FAILURE)
         return EXIT_FAILURE;
-    }        
 
     FD_SET(interfaceFD, &masterFDSet);
     maxFD = interfaceFD;
@@ -223,8 +265,7 @@ static int initBind(void) {
 }
 
 static int reconnectSocket(void) {
-    unsigned int waitPeriod[3] = {5,15,60}; // seconds
-    int count;
+    int count = 0;
     
     close(interfaceFD);
     FD_CLR(interfaceFD, &masterFDSet);
@@ -236,19 +277,24 @@ static int reconnectSocket(void) {
         return EXIT_FAILURE;
     }
     
-    for(count = 0; count < 3; count += 1) {
+    while(count < 24 || persistent) {
         if (connect(interfaceFD, addresInfo->ai_addr, addresInfo->ai_addrlen) == -1) {
-            syslog(LOG_WARNING, "Failed to reconnect, initiating sleep [%i]: %s", 
-                waitPeriod[count], strerror(errno));
-            sleep(waitPeriod[count]);
+            syslog(LOG_WARNING, "Failed to reconnect, initiating sleep [5s]: %s", 
+                strerror(errno));
+            sleep(5);
         }
         else {
-            syslog(LOG_WARNING, "Reconnected: %s", strerror(errno));
+            syslog(LOG_WARNING, "Reconnected");
             FD_SET(interfaceFD, &masterFDSet); // replaced old fd for new
             if (interfaceFD > maxFD)
                 maxFD = interfaceFD;
+    
+            if(setKeepAlive() == EXIT_FAILURE)
+                return EXIT_FAILURE;
+            
             return EXIT_SUCCESS;
         }
+        count++;
     }
     return EXIT_FAILURE;
 }
@@ -257,7 +303,22 @@ static int sendDummy(const void *message, size_t messageLength) {
     return EXIT_SUCCESS;
 }
 
+static int sendAll(const void *message, size_t messageLength) {
+    int newFD, countFD;
+    
+    for(countFD = 0; countFD <= maxFD; countFD++) {
+        if (FD_ISSET(countFD, &masterFDSet) && listenFD != countFD && 
+        !(countFD == interfaceFD && requestReconnect))
+            sendTCP(message, messageLength, &countFD);
+    }
+
+    return EXIT_SUCCESS;
+}
+
 static int sendTCP2InterfaceFD(const void *message, size_t messageLength) {
+    if(requestReconnect == 1)
+        return EXIT_SUCCESS;
+    
     if(sendTCP(message, messageLength, &interfaceFD) == EXIT_FAILURE)
         return EXIT_FAILURE;
     else
@@ -279,16 +340,11 @@ static int sendTCP(const void *message, size_t messageLength, int *address) {
     
     while(0 < messageLength) {
         if((bytesSend = send(*address, message, messageLength, MSG_NOSIGNAL)) == -1) {
-            syslog(LOG_WARNING, "Send failed, reconnect attempted: %s", strerror(errno));
-            if(reconnectSocket() == EXIT_FAILURE) {
-            
-                pthread_mutex_unlock(&interfaceLock);
-                pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-                
-                syslog(LOG_WARNING, "Reconnect failed");
-                return EXIT_FAILURE;
+            syslog(LOG_WARNING, "Send failed: %s", strerror(errno));
+            if(*address == interfaceFD) {
+                requestReconnect = 1;
             }
-            continue;
+            break;
         }
         message = message+bytesSend;
         messageLength = messageLength-bytesSend;
@@ -363,25 +419,13 @@ static void *listenTCP(void *arg) {
                     // handle data from a client
                     if ((bytesReceived = recv(countFD, interfaceRxPtr, SERIAL_READ_BUFFER-1-leftovers, 0)) <= 0) {
                         if (countFD == interfaceFD) { // essential connection, attempt reconnect
-                            pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-                            if(pthread_mutex_trylock(&interfaceLock) == 0) {
-                                if(reconnectSocket() == EXIT_FAILURE) {
-                                    syslog(LOG_WARNING, "Reconnect failed");
-                                    pthread_kill(mainThread, SIGTERM);
-                    
-                                    pthread_mutex_unlock(&interfaceLock);
-                                    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-                    
-                                    pause();
-                                }
-                                pthread_mutex_unlock(&interfaceLock);
-                                pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+                            requestReconnect = 1;
+                            if(reconnectSocket() == EXIT_FAILURE) {
+                                syslog(LOG_WARNING, "Reconnect failed");
+                                pthread_kill(mainThread, SIGTERM);
+                                pause();
                             }
-                            else {
-                                pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-                                sleep(15); // allow for other process to reestablish connection
-                                continue;
-                            }
+                            requestReconnect = 0;
                         }
                         else { // obsolete connection
                             close(countFD);
@@ -394,6 +438,8 @@ static void *listenTCP(void *arg) {
                         }
                     }
                     else {
+                        if(sync_2way)
+                            continue;
                         if(echoRx)
                             sendTCP(interfaceRxPtr, bytesReceived, &countFD);
                         interfaceRxBuffer[bytesReceived+leftovers] = '\0';
