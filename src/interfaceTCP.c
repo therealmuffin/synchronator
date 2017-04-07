@@ -38,6 +38,8 @@
 #include "common.h"
 #include "interfaces.h"
 
+#define MAX_PORT_SIZE 6
+
 static void help(void);
 static int init(void);
 static int initConnect(void);
@@ -156,7 +158,7 @@ static int setKeepAlive(void) {
 
 static int initConnect(void) {
     const char *tcpIP;
-    char tcpPortChar[5];
+    char tcpPortChar[MAX_PORT_SIZE];
     int status, tcpPortInt;
 
     if(validateConfigString(&config, "tcp_address", &tcpIP, -1) == EXIT_FAILURE)
@@ -208,7 +210,7 @@ static int initConnect(void) {
 
 static int initBind(void) {
     struct addrinfo hints, *results, *cResult;
-    char tcpPortChar[5];
+    char tcpPortChar[MAX_PORT_SIZE];
     int status, tcpPortInt;
     int yes=1; // need to obtain pointer to value
 
