@@ -414,8 +414,8 @@ static int processCommand(void *category_lookup, void *action_lookup) {
         if(!config_setting_is_group(config_child) ||
         !config_setting_lookup_bool(config_child, "register", &int_setting) || int_setting == 0 ||
         !(config_entry = config_setting_get_member(config_child, "header")) || 
-        (int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 || 
-        int_setting != *(uint8_t *)category_lookup)
+        ((int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 && 
+        *(uint8_t *)category_lookup != 0) || int_setting != *(uint8_t *)category_lookup)
             continue;
         
         current_header = config_setting_name(config_child);
@@ -423,8 +423,8 @@ static int processCommand(void *category_lookup, void *action_lookup) {
         
         for(entry_count = 0; entry_count < total_child_entries; entry_count++) {
             config_entry = config_setting_get_elem(config_child, entry_count);
-            if((int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 || 
-            int_setting != *(uint8_t *)action_lookup)
+            if(((int_setting = config_setting_get_int_elem(config_entry, common_data.diff_commands)) == 0 && 
+            *(uint8_t *)category_lookup != 0) || int_setting != *(uint8_t *)action_lookup)
                 continue;
             
             snprintf(status_file_path, MAX_PATH_LENGTH, "%s/%s.%s", TEMPLOCATION, PROGRAM_NAME, current_header);
