@@ -21,7 +21,7 @@ NAME=synchronator
 DAEMON=/usr/local/bin/$NAME
 PIDLOCATION=/var/run/$NAME
 PIDFILE=$PIDLOCATION/$NAME.pid
-DAEMON_ARGS="-i /usr/local/etc/"$NAME".conf"
+DAEMON_ARGS="-i /usr/local/etc/"$NAME".conf -d"
 USER=root
 
 [ -x $DAEMON ] || exit 0
