@@ -42,7 +42,7 @@ typedef struct {
     uint8_t *serial_command[2], *event_header[2], *event[2], *command_tail[2];
 // length of serial_command == command_tail - serial_command + 1?
     int header_length[2], volume_header[2], serial_command_length[2], tail_length[2];
-    int alwaysMatchTail;
+    int alwaysMatchTail, cc_position;
     
     uint8_t *statusQuery;
     
@@ -135,12 +135,24 @@ static int init(void) {
             count, 0, 255, -1) == EXIT_FAILURE)
                 return EXIT_FAILURE;
         }
-        if(validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], 
-        main_count*common_data.diff_commands, 0, 255, -2) == EXIT_FAILURE) {
+        if(validateConfigInt(&config, "cc_position", &dechex_data.cc_position, 
+        main_count*common_data.diff_commands, 1, dechex_data.header_length[main_count]-1, -2) == EXIT_FAILURE) {
+            dechex_data.cc_position = -1;
+        }
+        else {
+            dechex_data.cc_position--;
+            dechex_data.event_header[main_count] = dechex_data.serial_command[main_count] + dechex_data.cc_position;
+        }
+        if((int_setting = validateConfigInt(&config, "volume.header", &dechex_data.volume_header[main_count], 
+        main_count*common_data.diff_commands, 0, 255, -2)) == EXIT_FAILURE || dechex_data.cc_position != -1) {
             dechex_data.serial_command_length[main_count]--;
-            dechex_data.event[main_count] = dechex_data.event_header[main_count];
+            dechex_data.event[main_count]--;
             if(dechex_data.tail_length[main_count] != 0)
                 dechex_data.command_tail[main_count]--; 
+            if(int_setting == EXIT_FAILURE && dechex_data.cc_position != -1) {
+                dechex_data.event_header[main_count] = dechex_data.event[main_count];
+                dechex_data.cc_position = -1;
+            }
         }
         snprintf(config_query, CONFIG_QUERY_SIZE, "tail.[%i]", main_count*common_data.diff_commands);
         for(count = 0; count < dechex_data.tail_length[main_count]; count++) {
@@ -471,13 +483,16 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
     for(count = 0; count < bytes_read; count++) {
         // if only volume, immediately send to volume process.
         
-        if((int)device_status_message[count] == dechex_data.serial_command[1][header_count] && 
-        dechex_data.header_length[1] != 0) {
+        if(((int)device_status_message[count] == dechex_data.serial_command[1][header_count] || 
+        header_count == dechex_data.cc_position) && dechex_data.header_length[1] != 0) {
+            if(header_count == dechex_data.cc_position) {
+                *dechex_data.event_header[1] = (uint8_t)device_status_message[count];
+            }
             header_count++;
             if(header_count == dechex_data.header_length[1]) {
                 header_count = 0;
                 tail_count = 0; // reset tail
-                message_index = alwaysVolume ? 2 : 1;
+                message_index = (alwaysVolume || dechex_data.cc_position != -1) ? 2 : 1;
                 continue;
             }
         }

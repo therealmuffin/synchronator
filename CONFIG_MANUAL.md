@@ -228,6 +228,8 @@ The header and tail in the main section are formatted as arrays delimited by squ
 
 None of the numeric data variables are mandatory except for volume. If no other variables are defined (header, tail, etc), every incoming byte is assumed to be volume data. Every outgoing byte represents volume data
 
+cc_position - If set, the command code is positioned at position x (starting at 1) in the header rather than after as per default. The original value in the header at that position will be overwritten.
+
 ### Glossary
 
 command - complete command send to target device
