@@ -44,6 +44,12 @@ Execute the following command to add the libconfig to LD_LIBRARY_PATH:
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 </pre>
 
+In some cases you also need to run the following command:
+<pre>
+ldconfig
+</pre>
+
+
 ####Synchronator:
 <pre>
 git clone https://github.com/therealmuffin/synchronator.git
@@ -143,7 +149,7 @@ Read the readme file and take a look at the different configuration files. This
 information in combination with the documentation of your amplifier should enable you to 
 create a configuration file for you amplifier. Any questions can be posted on GitHub.
 
-Copy the configuration file to the directory /usr/local/etc/ or /etc/ with the name 
+Copy the configuration file to the directory /usr/local/etc/ with the name 
 synchronator.conf:
 <pre>
 /usr/local/etc/synchronator.conf
@@ -167,8 +173,7 @@ Test your setup (without source or speakers connected).
 
 ##### Making Synchronator start at boot
 
-If it runs without issues make it
-start at boot, for Debian/Ubuntu/Voyage/etc systems:
+If it runs without issues make it start at boot, for Debian/Ubuntu/Voyage/etc systems:
 <pre>
 cp the synchronator script in the scripts/init.d directory to /etc/init.d
 </pre>
