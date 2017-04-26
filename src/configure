@@ -112,6 +112,7 @@ process_arguments()
             ;;
             --prefix=* )
                 if [ -d ${1#*=} ]; then
+                    echo '#define INSTALL_LOCATION "${1#*=}"' >> config.h
                     echo "PREFIX=${1#*=}" >> config.mk
                 else
                     printf >&2 'FATAL: location is not valid: %s\n' "${1#*=}"
@@ -224,6 +225,7 @@ echo Configuring Synchronator
 type "pkg-config" >/dev/null 2>&1 || { echo >&2 "Can not find pkg-config. Aborting."; exit 1; }
 
 echo "// automatically generated file" > config.h
+echo '#define INSTALL_LOCATION "/usr/local"' > config.h
 
 process_arguments $@
 

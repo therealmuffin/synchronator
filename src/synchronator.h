@@ -11,6 +11,10 @@
         #include "config.h"
     #endif // #ifdef INCLUDE_CONFIG
     
+    #ifndef INSTALL_LOCATION
+        #define INSTALL_LOCATION = "/usr/local"
+    #endif // #ifndef INSTALL_LOCATION
+    
     #ifdef INCLUDE_VERSION
         #include "version.h"
     #endif // #ifdef INCLUDE_VERSION
@@ -66,7 +70,7 @@
     "This is free software; see the source for copying conditions. There is NO\n" \
     "warranty; not even MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 
-    #define CONFIG_LOCATION1 "../etc/" PROGRAM_NAME ".conf"
+    #define CONFIG_LOCATION1 INSTALL_LOCATION "/etc/" PROGRAM_NAME ".conf"
     #define CONFIG_LOCATION2 "/etc/" PROGRAM_NAME ".conf"
 
     #define TEXT_USAGE \
