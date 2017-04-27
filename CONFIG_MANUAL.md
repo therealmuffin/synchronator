@@ -88,7 +88,7 @@ diff_commands - specifies whether to use different commands for listening and se
 
 ### Main section settings
 
-Parameters that could differ between incoming and outgoing commands are defined between parentheses (regardless of wether diff_commands is TRUE or not). If incoming and outgoing  parameters differ, the incoming version is defined first, followed by a comma and then the outgoing version. 
+Parameters that could differ between incoming and outgoing commands are defined between parentheses (regardless of wether diff_commands is TRUE or not). If incoming and outgoing  parameters differ, the outgoing version is defined first, followed by a comma and then the incoming version. 
 
 header - prefix to every command
 
