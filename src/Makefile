@@ -12,8 +12,8 @@ PROGRAM-PREFIX ?=
 PROGRAM-SUFFIX ?=
 output_devices=1
 
-SRCS := synchronator.c volume.c volumeLinear.c volumeLog.c interfaces.c processData.c processAscii.c processNumeric.c verifyConfig.c mixerAlsa.c mimicAbsVol.c mods.c modVolumeResponseRange.c modVolumeResponseCondResize.c modCommandDynaudio.c modCommandDenonAVR.c
-DEPS := config.mk common.h synchronator.h volume.h interfaces.h processData.h verifyConfig.h mixer.h mimicAbsVol.h mods.h
+SRCS := synchronator.c volume.c volumeLinear.c volumeLog.c interfaces.c processData.c processAscii.c processNumeric.c verifyConfig.c mixerAlsa.c mimicAbsVol.c mods.c modVolumeResponseRange.c modVolumeResponseCondResize.c modCommandDynaudio.c modCommandDenonAVR.c volume_mapping.c
+DEPS := config.mk common.h synchronator.h volume.h interfaces.h processData.h verifyConfig.h mixer.h mimicAbsVol.h mods.h volume_mapping.h
 
 ifndef DISABLE_SERIAL
 SRCS += interfaceSerial.c

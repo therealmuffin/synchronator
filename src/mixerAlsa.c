@@ -23,6 +23,8 @@
 #include <syslog.h>
 #include <alsa/asoundlib.h>
 
+#include "volume_mapping.h"
+
 #include "common.h"
 #include "mixer.h"
 
@@ -31,6 +33,7 @@ static int reinit(void);
 
 static snd_mixer_t *snd_handle = NULL;
 static snd_mixer_elem_t *snd_elem = NULL;
+static int volumeNormalized = 0;
 
 int initMixer(void) {
     common_data.reinitVolume = &reinit;
@@ -51,6 +54,7 @@ int initMixer(void) {
     if(config_lookup_int(&config, "mixer_index", &mix_index) == CONFIG_TRUE) {
         syslog(LOG_INFO, "[OK] mixer_index: %i", mix_index);
     }
+    validateConfigBool(&config, "mixer_normalize", &volumeNormalized, 0);
 
     /* sets simple-mixer index and name */
     snd_mixer_selem_id_set_index(snd_sid, mix_index);
@@ -84,8 +88,14 @@ int initMixer(void) {
         return EXIT_FAILURE;
         pause();
     }
-    snd_mixer_selem_get_playback_volume_range(snd_elem, &common_data.alsa_volume_min, 
-        &common_data.alsa_volume_max);
+    if(volumeNormalized) {
+        common_data.alsa_volume_min = 0;
+        common_data.alsa_volume_max = 100;
+    }
+    else {
+        snd_mixer_selem_get_playback_volume_range(snd_elem, &common_data.alsa_volume_min, 
+            &common_data.alsa_volume_max);
+    }
     common_data.alsa_volume_range = common_data.alsa_volume_max - common_data.alsa_volume_min;
     syslog(LOG_DEBUG, "Alsa volume range, min, max: %i, %i, %i", common_data.alsa_volume_range, 
         common_data.alsa_volume_min, common_data.alsa_volume_max);
@@ -107,14 +117,19 @@ static int reinit(void) {
 int getMixer(long *volume) {
     int status = -2;
 
-    if((snd_mixer_selem_get_playback_volume(snd_elem, 0, volume)) < 0) {
+    if(volumeNormalized) {
+        *volume = 100 * get_normalized_playback_volume(snd_elem, 0);
+    }
+    else {
+        if((snd_mixer_selem_get_playback_volume(snd_elem, 0, volume)) < 0) {
             syslog(LOG_ERR, "Failed to get playback volume: %s (%i)", 
                 snd_strerror(status), status);
             return EXIT_FAILURE;
         }
-    /* make the value bound to 100 */  
-    // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
-    *volume = 100 * (*volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
+        /* make the value bound to 100 */  
+        // perhaps bound to 1000 to increase precision? MPD 0-100, Airplay -30-0 (-144==mute)
+        *volume = 100 * (*volume - common_data.alsa_volume_min) / common_data.alsa_volume_range;
+    }
 
     common_data.volume->convertMixer2Internal(volume);
     
@@ -122,9 +137,19 @@ int getMixer(long *volume) {
 }
 
 int setMixer(int volume) {
-    if((snd_mixer_selem_set_playback_volume_all(snd_elem, volume)) != 0) {
-        syslog(LOG_WARNING, "Setting mixer failed");
-        return EXIT_FAILURE;
+
+    if(volumeNormalized) {
+        if((set_normalized_playback_volume(snd_elem, 0.01 * volume, -1)) != 0) {
+            syslog(LOG_WARNING, "Setting mixer failed");
+            return EXIT_FAILURE;
+            syslog(LOG_ERR, "Volume (%i)", volume);
+        }
+    }
+    else {
+        if((snd_mixer_selem_set_playback_volume_all(snd_elem, volume)) != 0) {
+            syslog(LOG_WARNING, "Setting mixer failed");
+            return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;

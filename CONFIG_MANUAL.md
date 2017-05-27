@@ -75,6 +75,8 @@ mixer_name - sets the mixer name on mixer_device [Master`*`]
 
 mixer_index - sets the mixer index on mixer_name [0`*`]
 
+mixer_normalize - correct for audio applications using volume normalization [TRUE|FALSE`*`]
+
 
 ## Data processing configuration
 
