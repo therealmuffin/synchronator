@@ -12,7 +12,7 @@
     #endif // #ifdef INCLUDE_CONFIG
     
     #ifndef INSTALL_LOCATION
-        #define INSTALL_LOCATION = "/usr/local"
+        #define INSTALL_LOCATION "/usr/local"
     #endif // #ifndef INSTALL_LOCATION
     
     #ifdef INCLUDE_VERSION
