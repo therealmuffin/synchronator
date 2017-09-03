@@ -119,7 +119,7 @@ curve - Volume curve can be linear or logarithmic. If volume control is relative
 
 Synchronator can treat the input volume changes as a (dynamic) target and generate a smooth curve at the amplifier end towards that (dynamic) target. This functionality is triggered by setting the 'timeout' option.
 
-mutation - mutation to the volume level for every step towards the (dynamic) volume target, set in hundreds of seconds. The lowest level of this setting is determined by the capabilities of the configured amplifier. For configurations with setting 'data-type' at value 'numerical', the minimum is one second (100). Above this minimum, the resulting volume level is rounded down to the nearest value possible for the configured amplifier [0-1000|100`*`]
+mutation - mutation to the volume level for every step towards the (dynamic) volume target, set in 1/100. The lowest level of this setting is determined by the capabilities of the configured amplifier. For configurations with setting 'data-type' at value 'numerical', the minimum is 1 (100). Above this minimum, the resulting volume level is rounded down to the nearest value possible for the configured amplifier [0-1000|100`*`]
 
 timeout - sets a timeout in milliseconds between each volume command set to generate a smooth volume curve and prevent dataloss due to an overload of data sent to the amplifier [0-100|0`*`]
 
