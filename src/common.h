@@ -26,7 +26,9 @@
         /* Status variable, external volume volume level if (mimicked) discrete, if relative internal 
             volume level */
         double volume_level_status;
-        int volumeMutationRange;
+        
+        /* If different from 0, smoothVolume is activated */
+        int volume_timeout;
         
         /* Multiplies non-discrete volume commands (not/partially implemented) */
         int nd_vol_multiplier;
@@ -56,5 +58,12 @@
     extern pthread_mutex_t lockProcess;
     extern pthread_mutex_t lockConfig;
     extern pthread_t mainThread;
+    
+    #define VOLUME_UP 20
+    #define VOLUME_DOWN 10
+    
+    
+    #define CONFIG_REQUIRED -1
+    #define CONFIG_IGNORE -2
 
 #endif

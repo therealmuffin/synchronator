@@ -95,20 +95,22 @@ static int initVolume(void) {
         return EXIT_FAILURE;
     }
     validateConfigBool(&config, "volume.discrete", &common_data.discrete_volume, 1);
+    validateConfigInt(&config, "volume.timeout", &common_data.volume_timeout, -1, 0, 100, 0);
     
     if(!common_data.discrete_volume) {
         if(strcmp("linear", common_data.volume->curve) != 0)
             syslog(LOG_ERR, "[Error] Volume curve must be 'linear' when using relative volume control");
         if(validateConfigInt(&config, "volume.multiplier", &common_data.nd_vol_multiplier, -1, 1, 100, 1) == EXIT_FAILURE)
             return EXIT_FAILURE;
-        validateConfigInt(&config, "volume.range", &common_data.volumeMutationRange, -1, 0, 1000, 0);
     }
-    if(common_data.discrete_volume && validateConfigInt(&config, "volume.min", 
-    &common_data.volume_min, -1, 0, 0, -1) == EXIT_FAILURE)
-        return EXIT_FAILURE;    
-    if(common_data.discrete_volume && validateConfigInt(&config, "volume.max", 
-    &common_data.volume_max, -1, 0, 0, -1) == EXIT_FAILURE)
-        return EXIT_FAILURE;
+    else {
+        if(validateConfigInt(&config, "volume.min", &common_data.volume_min, -1, 0, 0, -1) == EXIT_FAILURE)
+            return EXIT_FAILURE;    
+        if(validateConfigInt(&config, "volume.max", &common_data.volume_max, -1, 0, 0, -1) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+    }
+        
+    // if false, disable the default volume feature
     if(validateConfigInt(&config, "volume.default", &common_data.defaultExternalVolume, -1, 
     common_data.volume_min, common_data.volume_max, -2) == EXIT_FAILURE)
         common_data.defaultExternalVolume = common_data.volume_min-1;

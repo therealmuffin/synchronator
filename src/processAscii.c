@@ -33,7 +33,7 @@
 #include "common.h"
 #include "processData.h"
 #include "verifyConfig.h"
-#include "mimicAbsVol.h"
+#include "smoothVolume.h"
 
 
 typedef struct {
@@ -56,8 +56,10 @@ static void help(void);
 static int init(void);
 static void deinit(void);
 static int sendVolumeCommand(long *volumeInternal);
+static int sendSmoothVolumeCommand(double *volumeExternal);
 static int replyVolumeCommand(long *volumeInternal);
-static int compileVolumeCommand(long *volumeInternal, char serial_command[200]);
+static void compileDescreteVolumeCommand(double *volumeExternal, char serial_command[200]);
+static int setVolumeCommand(long *volumeInternal, char serial_command[200]);
 static int sendDeviceCommand(char *category, char *action);
 static int replyDeviceCommand(char *category, char *action);
 static int compileDeviceCommand(char *header, char *action, char serial_command[200]);
@@ -135,16 +137,13 @@ static int init(void) {
             ascii_data.volume_tail[0], ascii_data.command_tail[0]);
         ascii_data.volumeMutationPositive = calloc(strlen(serial_command)+1, sizeof(char));
         strcpy(ascii_data.volumeMutationPositive, serial_command);
-        
-        if(common_data.volumeMutationRange) {
-            if(validateConfigInt(&config, "volume.max", &common_data.volume_max, -1, 1, 
-            common_data.volumeMutationRange, common_data.volumeMutationRange) == EXIT_FAILURE)
-                return EXIT_FAILURE;
-        
-            if(mimicAbsVol.init(ascii_data.volumeMutationNegative, ascii_data.volumeMutationPositive) == EXIT_FAILURE)
-                return EXIT_FAILURE;
-        }
     }
+    
+    if(common_data.volume_timeout) {
+        if(smoothVolume.init(&sendSmoothVolumeCommand, (char *)ascii_data.volumeMutationNegative, (char *)ascii_data.volumeMutationPositive) == EXIT_FAILURE)
+            return EXIT_FAILURE;
+    }
+    
     if(common_data.send_query && validateConfigString(&config, "query.trigger.[0]", &common_data.statusQuery, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
         if(common_data.send_query) common_data.statusQueryLength = strlen(common_data.statusQuery);
@@ -187,12 +186,38 @@ static int sendVolumeCommand(long *volumeInternal) {
         return EXIT_SUCCESS;
     }
     
-    if(compileVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
+    if(setVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
         pthread_mutex_unlock(&lockProcess);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
         return EXIT_SUCCESS;
     }
+
+#ifdef TIME_DEFINED_TIMEOUT 
+    clock_gettime(CLOCK_MONOTONIC , &common_data.timestampLastTX);
+#else
+    common_data.volume_in_timeout = DEFAULT_PROCESS_TIMEOUT_IN;
+#endif // #ifdef TIME_DEFINED_TIMEOUT
+
+    syslog(LOG_DEBUG, "Volume level mutation (int. initiated): ext. level: %.2f", 
+        common_data.volume_level_status);
+    
+    pthread_mutex_unlock(&lockProcess);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    
+    if(common_data.interface->send(serial_command, strlen(serial_command)) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+    
+    return EXIT_SUCCESS;
+}
+
+static int sendSmoothVolumeCommand(double *volumeExternal) {
+    char serial_command[200];
+    
+    pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+    pthread_mutex_lock(&lockProcess);
+    
+    compileDescreteVolumeCommand(volumeExternal, serial_command);
 
 #ifdef TIME_DEFINED_TIMEOUT 
     clock_gettime(CLOCK_MONOTONIC , &common_data.timestampLastTX);
@@ -218,7 +243,7 @@ static int replyVolumeCommand(long *volumeInternal) {
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_mutex_lock(&lockProcess);
     
-    if(compileVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
+    if(setVolumeCommand(volumeInternal, serial_command) == EXIT_FAILURE) {
         pthread_mutex_unlock(&lockProcess);
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         
@@ -236,7 +261,15 @@ static int replyVolumeCommand(long *volumeInternal) {
     return EXIT_SUCCESS;
 }
 
-static int compileVolumeCommand(long *volumeInternal, char serial_command[200]) {
+static void compileDescreteVolumeCommand(double *volumeExternal, char serial_command[200]) {
+    snprintf(serial_command, 200, "%s%s%s%0*.*f%s%s", 
+        ascii_data.command_header[0], ascii_data.volume_header[0], 
+        ascii_data.event_delimiter[0], ascii_data.volume_length, 
+        ascii_data.volume_precision, *volumeExternal, ascii_data.volume_tail[0], 
+        ascii_data.command_tail[0]);
+}
+
+static int setVolumeCommand(long *volumeInternal, char serial_command[200]) {
     
     if(*volumeInternal < 0 || *volumeInternal > 100) {
         syslog(LOG_WARNING, "Value for command \"volume\" is not valid: %ld", *volumeInternal);
@@ -244,23 +277,19 @@ static int compileVolumeCommand(long *volumeInternal, char serial_command[200]) 
         return EXIT_FAILURE;
     }
     
-    if(common_data.discrete_volume) {
+    if(common_data.discrete_volume || common_data.volume_timeout) {
         double volumeExternal;
         common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
-        snprintf(serial_command, 200, "%s%s%s%0*.*f%s%s", 
-            ascii_data.command_header[0], ascii_data.volume_header[0], 
-            ascii_data.event_delimiter[0], ascii_data.volume_length, 
-            ascii_data.volume_precision, volumeExternal, ascii_data.volume_tail[0], 
-            ascii_data.command_tail[0]);
             
         common_data.volume_level_status = volumeExternal;
-    }
-    else if(common_data.volumeMutationRange) {
-        double volumeExternal;
-        common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
-        mimicAbsVol.process(volumeExternal);
-        common_data.volume_level_status = volumeExternal;
-        return EXIT_FAILURE; // to prevent an attempt to serial_command in calling function
+        
+        if(common_data.volume_timeout) {
+            smoothVolume.process(&volumeExternal);
+            return EXIT_FAILURE;
+        }
+        else {
+            compileDescreteVolumeCommand(&volumeExternal, serial_command);
+        }
     }
     else {
         if(common_data.volume_level_status == *volumeInternal)
@@ -571,8 +600,8 @@ static int strip_raw_input(unsigned char *device_status_message, ssize_t bytes_r
 static void deinit(void) {
     if(common_data.mod->command != NULL)
         common_data.mod->command->deinit();
-    if(!common_data.discrete_volume && common_data.volumeMutationRange)
-        mimicAbsVol.deinit();
+    if(common_data.volume_timeout)
+        smoothVolume.deinit();
         
     if(ascii_data.volumeMutationNegative != NULL)
         free(ascii_data.volumeMutationNegative);

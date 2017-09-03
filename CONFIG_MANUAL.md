@@ -114,9 +114,18 @@ header - prefix added to every volume command code (thus post the header defined
 
 curve - Volume curve can be linear or logarithmic. If volume control is relative, only linear is allowed [linear`*`|log]
 
+
+###### additional discrete specific options
+
+Synchronator can treat the input volume changes as a (dynamic) target and generate a smooth curve at the amplifier end towards that (dynamic) target. This functionality is triggered by setting the 'timeout' option.
+
+mutation - mutation to the volume level for every step towards the (dynamic) volume target, set in hundreds of seconds. The lowest level of this setting is determined by the capabilities of the configured amplifier. For configurations with setting 'data-type' at value 'numerical', the minimum is one second (100). Above this minimum, the resulting volume level is rounded down to the nearest value possible for the configured amplifier [0-1000|100`*`]
+
+timeout - sets a timeout in milliseconds between each volume command set to generate a smooth volume curve and prevent dataloss due to an overload of data sent to the amplifier [0-100|0`*`]
+
 ###### additional non-discrete specific options
 
-Synchronator can mimic discrete volume control for non-discrete controlable amplifiers. To activate this functionality, the option 'range' needs to be set. To sync Synchronator's volume level with that of the amplifier, volume level is set to zero at initialisation. Sample configuration files that have this functionality enabled have a suffix of MAVC (Mimic Absolute Volume Control).
+Synchronator can mimic discrete volume control for non-discrete controlable amplifiers. To activate this functionality, the option 'timeout' needs to be set. To sync Synchronator's volume level with that of the amplifier, volume level is set to zero at initialisation. Sample configuration files that have this functionality enabled have a suffix of MAVC (Mimic Absolute Volume Control).
 
 range - number of steps to go from zero to maximum volume (may be higher than the actual value, not lower as that would render the initialisation process ineffective)
 
@@ -124,7 +133,7 @@ max - limits the maximum volume level to a value below that set in range [x < ra
 
 default - in addition to the description above, in this mode this function also triggers a volume reinitialisation.
 
-timeout - sets a timeout in milliseconds between each volume command set to prevent dataloss due to an overload of data sent to the amplifier [0`*`]
+timeout - sets a timeout in milliseconds between each volume command set to prevent dataloss due to an overload of data sent to the amplifier [0-100|0`*`]
 
 double_zero_interval - Synchronator relies for this functionality on its ability to keep track of the current volume level. This process can be disrupted by user intervention at the amplifier end. By moving volume twice to zero within the set interval (in seconds),  Synchronator reinitialises its volume level. Setting this value to zero, enables initialization everytime volume level reaches zero [2`*`]
 
