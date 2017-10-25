@@ -24,6 +24,7 @@ static void regenerateMultipliers(void);
 static void convertExternal2Mixer(double *volume);
 static void convertMixer2Internal(long *volume);
 static void convertInternal2External(long *volumeInternal, double *volumeExternal);
+static void convertExternal2Internal(double *volumeExternal, long *volumeInternal);
 
 volumeCurve_t volumeCurveLinear = {
     .name = "linear",
@@ -31,7 +32,8 @@ volumeCurve_t volumeCurveLinear = {
     .regenerateMultipliers = &regenerateMultipliers,
     .convertExternal2Mixer = &convertExternal2Mixer,
     .convertMixer2Internal = &convertMixer2Internal,
-    .convertInternal2External = &convertInternal2External
+    .convertInternal2External = &convertInternal2External,
+    .convertExternal2Internal = &convertExternal2Internal
     
 };
 
@@ -59,4 +61,8 @@ static void convertMixer2Internal(long *volume) {
 
 static void convertInternal2External(long *volumeInternal, double *volumeExternal) {
     *volumeExternal = (*volumeInternal * multiplierIntToExt) + common_data.volume_min;
+}
+
+static void convertExternal2Internal(double *volumeExternal, long *volumeInternal) {
+    *volumeInternal = (*volumeExternal - common_data.volume_min) / multiplierIntToExt;
 }

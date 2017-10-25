@@ -216,6 +216,8 @@ static int sendSmoothVolumeCommand(double *volumeExternal) {
     
     pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
     pthread_mutex_lock(&lockProcess);
+        
+    common_data.volume_level_status = *volumeExternal;
     
     compileDescreteVolumeCommand(volumeExternal, serial_command);
 
@@ -278,16 +280,16 @@ static int setVolumeCommand(long *volumeInternal, char serial_command[200]) {
     }
     
     if(common_data.discrete_volume || common_data.volume_timeout) {
-        double volumeExternal;
-        common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
-            
-        common_data.volume_level_status = volumeExternal;
         
         if(common_data.volume_timeout) {
-            smoothVolume.process(&volumeExternal);
+            smoothVolume.process(volumeInternal);
             return EXIT_FAILURE;
         }
         else {
+            double volumeExternal;
+            common_data.volume->convertInternal2External(volumeInternal, &volumeExternal);
+            common_data.volume_level_status = volumeExternal;
+            
             compileDescreteVolumeCommand(&volumeExternal, serial_command);
         }
     }

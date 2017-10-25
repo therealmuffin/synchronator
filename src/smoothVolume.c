@@ -36,7 +36,7 @@
 // create files volumeProcessLinear.c, volumeProcess
 static int init(int (*setDescreteVolume)(double *externalVolume), char *volMin, char *volPlus);
 static int reinit(void);
-static int process(double *volumeExternal);
+static int process(long *volumeInternal);
 static void deinit(void);
 static void *setExternalVolume(void *unused);
 static int resetVolume(void);
@@ -78,8 +78,8 @@ static sigset_t thread_sigmask;
 static int resetInProgress;
 static int reinitInProgress;
 static double defaultVolume;
-static double actualExternalVolume;
-static double requestedExternalVolume;
+static double actualVolume;
+static double requestedVolume;
 
 static int init(int (*setDescreteVolume)(double *externalVolume), char *volMin, char *volPlus) {
     timestampLastMute = (struct timespec) { 0, 0 };
@@ -117,7 +117,8 @@ static int init(int (*setDescreteVolume)(double *externalVolume), char *volMin, 
         
         localSettings.volumeMutation = (tempInt / 100);
         
-        if(precision == 0) {
+        // log uses internal linear volume curve as reference and can't handle float
+        if(precision == 0 || strcmp(common_data.volume->curve, "log") == 0) {
             localSettings.volumeMutation = (int)localSettings.volumeMutation;
             if(localSettings.volumeMutation == 0) localSettings.volumeMutation = 1;
         }
@@ -199,7 +200,7 @@ static int resetVolume(void) {
     
     if(setMixer(common_data.alsa_volume_min) == EXIT_FAILURE)
         return EXIT_FAILURE;
-    common_data.volume_level_status = actualExternalVolume = 0;
+    common_data.volume_level_status = actualVolume = 0;
     
     if(reinitInProgress && common_data.defaultExternalVolume >= common_data.initial_volume_min) {
         setMixer((int)defaultVolume);//? == EXIT_FAILURE;
@@ -210,13 +211,13 @@ static int resetVolume(void) {
     return EXIT_SUCCESS;
 }
 
-static int process(double *volumeExternal) {
+static int process(long *volumeInternal) {
     int status;
     if(resetInProgress)
         return EXIT_SUCCESS;
     
 #ifdef TIME_DEFINED_TIMEOUT
-    if(!common_data.discrete_volume && *volumeExternal == 0) {
+    if(!common_data.discrete_volume && *volumeInternal == 0) { // is this ok? used to be volumeExternal
         clock_gettime(CLOCK_MONOTONIC , &timestampCurrent);
         if(!localSettings.resetInterval || (timestampCurrent.tv_sec - timestampLastMute.tv_sec) <= localSettings.resetInterval) {
             syslog(LOG_DEBUG, "Initiating volume reset");
@@ -228,13 +229,33 @@ static int process(double *volumeExternal) {
             timestampLastMute = timestampCurrent;
     }
 #endif
-
-    requestedExternalVolume = *volumeExternal;
+    if(strcmp(common_data.volume->curve, "log") == 0) {
+        requestedVolume = *volumeInternal;
+    }
+    else {
+        common_data.volume->convertInternal2External(volumeInternal, &requestedVolume);
+    }
     
+    if(common_data.discrete_volume == 0) {
+        requestedVolume = (int)requestedVolume;
+    }
+        
     // after setting resetInProgress it can only be catched once
     if(!pthread_equal(setExternalVolumeThread, thisThread) && 
     pthread_kill(setExternalVolumeThread, 0) == 0 && !resetInProgress)
         return EXIT_SUCCESS;
+    
+    // sync local external volume status with global one.// 
+    if(common_data.discrete_volume == 1) {
+        if(strcmp(common_data.volume->curve, "log") == 0) {
+            long testvar = (long)actualVolume;
+            common_data.volume->convertExternal2Internal(&common_data.volume_level_status, &testvar);
+            syslog(LOG_INFO, "Actual incoming log volume: %i (%.2f - %.2f)\n", testvar, actualVolume, common_data.volume_level_status);
+            actualVolume = (double)testvar;
+        }
+        else
+            actualVolume = common_data.volume_level_status;
+    }
         
     if(!pthread_equal(setExternalVolumeThread, thisThread) && 
     (errno = pthread_join(setExternalVolumeThread, NULL)) != 0)
@@ -250,6 +271,7 @@ static int process(double *volumeExternal) {
 }
 
 static void *setExternalVolume(void *unused) {
+    double actualExternalVolume;
     if(pthread_sigmask(SIG_BLOCK, &thread_sigmask, NULL) < 0) {
         syslog(LOG_ERR, "Failed to ignore signals in smoothVolume: %i", errno);
         pthread_kill(mainThread, SIGTERM);
@@ -259,38 +281,45 @@ static void *setExternalVolume(void *unused) {
     if(resetInProgress == 1)
         resetVolume();
     
-    while(actualExternalVolume != requestedExternalVolume) {
+    while(actualVolume != requestedVolume) {
         if(common_data.discrete_volume) {
-            if(actualExternalVolume > requestedExternalVolume) {
-                if((actualExternalVolume - requestedExternalVolume) > localSettings.volumeMutation) {
-                    actualExternalVolume -= localSettings.volumeMutation;
+            if(actualVolume > requestedVolume) {
+                if((actualVolume - requestedVolume) > localSettings.volumeMutation) {
+                    actualVolume -= localSettings.volumeMutation;
                 }
                 else {
-                    actualExternalVolume = requestedExternalVolume;
+                    actualVolume = requestedVolume;
                 }
             }
             else {
-                if((requestedExternalVolume - actualExternalVolume) > localSettings.volumeMutation) {
-                    actualExternalVolume += localSettings.volumeMutation;
+                if((requestedVolume - actualVolume) > localSettings.volumeMutation) {
+                    actualVolume += localSettings.volumeMutation;
                 }
                 else {
-                    actualExternalVolume = requestedExternalVolume;
+                    actualVolume = requestedVolume;
                 }
             }
+            if(strcmp(common_data.volume->curve, "log") == 0) {
+                long x = (long)actualVolume;
+                common_data.volume->convertInternal2External(&x, &actualExternalVolume);
+            }
+            else
+                actualExternalVolume = actualVolume;
+            
             localSettings.setDescreteVolume(&actualExternalVolume);
         }
         else {
             char *volCurrent;
             int volLenCurrent = 0;
-            if(actualExternalVolume > requestedExternalVolume) {
+            if(actualVolume > requestedVolume) {
                 volCurrent = localSettings.volMin;
                 volLenCurrent = localSettings.volMinLen;
-                actualExternalVolume--;
+                actualVolume--;
             }
             else {
                 volCurrent = localSettings.volPlus;
                 volLenCurrent = localSettings.volPlusLen;
-                actualExternalVolume++;
+                actualVolume++;
             }
             
             if(common_data.interface->send(volCurrent, volLenCurrent) == EXIT_FAILURE) {
@@ -300,7 +329,7 @@ static void *setExternalVolume(void *unused) {
             }
         }
         
-        syslog(LOG_DEBUG, "Smooth volume level status: current (requested): %.2f (%.2f)", actualExternalVolume, requestedExternalVolume);
+        syslog(LOG_DEBUG, "Smooth volume level status: current (requested): %.2f (%.2f)", actualVolume, requestedVolume);
         
 #ifdef TIME_DEFINED_TIMEOUT
         clock_nanosleep(CLOCK_MONOTONIC, 0, &localSettings.timeout, NULL);

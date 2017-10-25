@@ -67,6 +67,7 @@ volume_functions_t *getVolume(const char **name) {
             volume.convertExternal2Mixer = (*curve)->convertExternal2Mixer;
             volume.convertMixer2Internal = (*curve)->convertMixer2Internal;
             volume.convertInternal2External = (*curve)->convertInternal2External;
+            volume.convertExternal2Internal = (*curve)->convertExternal2Internal;
             return &volume;
         }
 

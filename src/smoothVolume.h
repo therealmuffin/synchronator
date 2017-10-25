@@ -3,9 +3,9 @@
     
     typedef struct {
         char *name;
-        int (*init)(int (*volumeDown)(double *externalVolume), char *volMin, char *volPlus);
+        int (*init)(int (*setDescreteVolume)(double *internalVolume), char *volMin, char *volPlus);
         void (*deinit)(void);
-        int (*process)(double *volumeExternal);
+        int (*process)(long *volumeExternal);
     } smoothVolume_t;
 
     extern smoothVolume_t smoothVolume;
