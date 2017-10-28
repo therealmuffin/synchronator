@@ -236,6 +236,8 @@ static int process(long *volumeInternal) {
         common_data.volume->convertInternal2External(volumeInternal, &requestedVolume);
     }
     
+    
+    // mimicking absolute volume control requires an integer
     if(common_data.discrete_volume == 0) {
         requestedVolume = (int)requestedVolume;
     }
@@ -245,13 +247,12 @@ static int process(long *volumeInternal) {
     pthread_kill(setExternalVolumeThread, 0) == 0 && !resetInProgress)
         return EXIT_SUCCESS;
     
-    // sync local external volume status with global one.// 
+    // sync local external volume status with global one
     if(common_data.discrete_volume == 1) {
         if(strcmp(common_data.volume->curve, "log") == 0) {
-            long testvar = (long)actualVolume;
-            common_data.volume->convertExternal2Internal(&common_data.volume_level_status, &testvar);
-            syslog(LOG_INFO, "Actual incoming log volume: %i (%.2f - %.2f)\n", testvar, actualVolume, common_data.volume_level_status);
-            actualVolume = (double)testvar;
+            long actualInternalVolume;
+            common_data.volume->convertExternal2Internal(&common_data.volume_level_status, &actualInternalVolume);
+            actualVolume = (double)actualInternalVolume;
         }
         else
             actualVolume = common_data.volume_level_status;
