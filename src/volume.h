@@ -8,6 +8,7 @@
         void (*convertExternal2Mixer)(double *volume);
         void (*convertMixer2Internal)(long *volume);
         void (*convertInternal2External)(long *volumeInternal, double *volumeExternal);
+        void (*convertExternal2Internal)(double *volumeExternal, long *volumeInternal);
 
 
     } volumeCurve_t;
@@ -22,6 +23,7 @@
         void (*convertExternal2Mixer)(double *volume);
         void (*convertMixer2Internal)(long *volume);
         void (*convertInternal2External)(long *volumeInternal, double *volumeExternal);
+        void (*convertExternal2Internal)(double *volumeExternal, long *volumeInternal);
     
     } volume_functions_t;
     
