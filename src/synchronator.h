@@ -66,7 +66,7 @@
         #define PROGRAM_VERSION "UNKOWN VERSION"
     #endif // #ifndef PROGRAM_VERSION
     #define PROGRAM_LEGAL \
-    "Copyright (C) 2013-2016 Muffinman\n" \
+    "Copyright (C) 2013-2017 Muffinman <synchronator.hifi@gmail.com>\n" \
     "This is free software; see the source for copying conditions. There is NO\n" \
     "warranty; not even MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 
