@@ -329,7 +329,7 @@ static int init(void) {
         return EXIT_FAILURE;
     }
     if(common_data.send_query && validateConfigInt(&config, "query.interval", 
-    &common_data.statusQueryInterval, -1, 0, 255, -1) == EXIT_FAILURE)
+    &common_data.statusQueryInterval, -1, 0, 300, -1) == EXIT_FAILURE)
         return EXIT_FAILURE;
     
     
