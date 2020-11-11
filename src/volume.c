@@ -27,7 +27,6 @@
 
 #include "synchronator.h"
 #include "common.h"
-#include "verifyConfig.h"
 #include "volume.h"
 
 

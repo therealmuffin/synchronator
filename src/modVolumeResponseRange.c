@@ -20,7 +20,6 @@
 #include <syslog.h>
 
 #include "common.h"
-#include "verifyConfig.h"
 #include "mods.h"
 
 

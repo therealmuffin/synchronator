@@ -18,11 +18,11 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include <syslog.h>
 
 #include "common.h"
 #include "processData.h"
-#include "verifyConfig.h"
 #include "mods.h"
 
 

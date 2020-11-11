@@ -32,7 +32,6 @@
 #include "synchronator.h"
 #include "common.h"
 #include "processData.h"
-#include "verifyConfig.h"
 #include "smoothVolume.h"
 
 

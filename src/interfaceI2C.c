@@ -27,7 +27,6 @@
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
 
-#include "verifyConfig.h"
 #include "synchronator.h"
 #include "common.h"
 #include "interfaces.h"

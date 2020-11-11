@@ -33,7 +33,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "verifyConfig.h"
 #include "synchronator.h"
 #include "common.h"
 #include "interfaces.h"

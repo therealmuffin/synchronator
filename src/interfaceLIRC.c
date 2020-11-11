@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <signal.h>
 #include <errno.h>
@@ -26,7 +27,6 @@
 #include <libconfig.h>
 #include <lirc/lirc_client.h>
 
-#include "verifyConfig.h"
 #include "synchronator.h"
 #include "common.h"
 #include "interfaces.h"

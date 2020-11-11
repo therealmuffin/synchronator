@@ -18,13 +18,13 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include <syslog.h>
 #include <math.h>
 #include <stdint.h> // declares uint8_t a.o.
 
 #include "common.h"
 #include "processData.h"
-#include "verifyConfig.h"
 #include "mods.h"
 
 

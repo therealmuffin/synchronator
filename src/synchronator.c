@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
 #include <fcntl.h> // for O_CREATE etc...
@@ -31,7 +32,6 @@
 
 #include "synchronator.h"
 #include "common.h"
-#include "verifyConfig.h"
 #include "volume.h"
 #include "interfaces.h"
 #include "processData.h"

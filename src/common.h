@@ -5,6 +5,7 @@
     #include <pthread.h>
     #include <libconfig.h>
     #include "synchronator.h"
+    #include "verifyConfig.h"
     #include "interfaces.h"
     #include "processData.h"
     #include "mixer.h"
