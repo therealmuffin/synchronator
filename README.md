@@ -69,6 +69,3 @@ For setting the appropriate configuration settings check the [configuration manu
 
 For using Synchronator in combination with Roon, check the [Roon configuration manual](INSTALL_ROON.md).
 
-## Downloads
-
-Download the configuration library from [http://www.hyperrealm.com/libconfig/](http://www.hyperrealm.com/libconfig/).

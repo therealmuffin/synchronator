@@ -26,17 +26,14 @@ I've used: http://www.robotshop.com/eu/en/droids-db9-serial-adapter.html
 	mixer_device	"hw:Dummy"
 	mixer_control	"Master"
 </pre>
-- download, compile, etc. libconfig from the source below. 
-    It is available from apt but that was somehow kind of buggy.
-    Don't forget to add it to your path if it isn't already
-- apt-get install libasound-dev
+- apt-get install libasound-dev libconfig-dev
 - configure, make, and make install to build synchronator.
 - create/get configuration file
 - modify php configuration file (optional)
 - manually place all files at their appropriate location
 
 ## BUILD REQUIREMENTS
-- libconfig (best to build it from [source](http://www.hyperrealm.com/libconfig/) rather than via apt).
+- libconfig
 - alsa development library
 - i2c development library when configured with i2c support
 

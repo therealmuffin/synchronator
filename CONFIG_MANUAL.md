@@ -5,8 +5,8 @@ synchronator.conf - synchronator configuration file
 Description
 synchronator.conf is the configuration file for synchronator. If not specified on the command line, synchronator searches first at ../etc/synchronator.conf and then at /etc/synchronator.conf.
 
-The configuration file is read using libconfig, therefore it should be formatted accordingly. It's manual can be found at:
-http://www.hyperrealm.com/libconfig/libconfig_manual.html
+The configuration file is read using libconfig, therefore it should be formatted accordingly. The full libconfig manual can be found at:
+https://hyperrealm.github.io/libconfig/libconfig_manual.html
 
 This is a preliminary configuration manual. Synchronator may change as different requirements are defined and implemented.
 

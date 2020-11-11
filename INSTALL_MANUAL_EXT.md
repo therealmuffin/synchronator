@@ -14,41 +14,13 @@ Run ```apt-get update```
 
 ####required packages
 <pre>
-apt-get install build-essential libasound2-dev alsa-utils pkg-config git
+apt-get install build-essential libasound2-dev alsa-utils pkg-config git libconfig-dev
 </pre>
 
 ####I2C development package (optional)
 <pre>
 apt-get install libi2c-dev
 </pre>
-
-####libconfig:
-<pre>
-wget http://www.hyperrealm.com/libconfig/libconfig-1.5.tar.gz
-tar -zxf libconfig-1.5.tar.gz
-cd libconfig-1.5
-./configure
-make
-make install
-</pre>
-
-Assuming there were no errors, remove the libconfig directory as it is
-not required anymore:
-<pre>
-cd ..
-rm -r libconfig-1.5
-</pre>
-
-Execute the following command to add the libconfig to LD_LIBRARY_PATH:
-<pre>
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
-</pre>
-
-In some cases you also need to run the following command:
-<pre>
-ldconfig
-</pre>
-
 
 ####Synchronator:
 <pre>
@@ -70,11 +42,18 @@ by...
 ./configure --enable-i2c
 </pre>
 
-For more options, check:
+Some more options:
 
+Enable TCP/Network support: 
 <pre>
-./configure --help
+--enable-tcp
 </pre>
+
+Enable LIRC support:
+<pre>
+--enable-lirc
+</pre>
+
 
 ###Configuration
 
