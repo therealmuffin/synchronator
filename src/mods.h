@@ -28,6 +28,6 @@
     
     } mods_t;
 
-    mods_t mod;
+    extern mods_t mod;
 
 #endif

@@ -25,7 +25,7 @@
     
     } statusInfo_t;
     
-    statusInfo_t statusInfo;
+    extern statusInfo_t statusInfo;
 
 
 #endif
